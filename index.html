@@ -1,0 +1,59 @@
+<head>
+    <title>为了防止网页被攻击，三秒后才能进入首页！</title>
+    <style>
+        /* 定义进度条动画 */
+        @keyframes progress {
+            0% { width: 0; }
+            100% { width: 100%; }
+        }
+
+        /* 进度条样式 */
+        #progressBar {
+            width: 0;
+            background-color: #4CAF50;
+            height: 30px;
+            position: relative;
+        }
+
+        /* 进度条上方标题样式 */
+        #progressTitle {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 24px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- 进度条 -->
+    <div id="progressBar">
+        <div id="progressTitle">为了防止网页被攻击，三秒后才能进入首页！</div>
+    </div>
+
+    <script>
+        window.onload = function () {
+            // 设置三秒后跳转
+            setTimeout(function () {
+                location.href = '1.html';
+            }, 3000);
+
+            // 实现进度条加载效果
+            let progressBar = document.getElementById('progressBar');
+            let progressTitle = document.getElementById('progressTitle');
+            let width = 0;
+            let interval = setInterval(frame, 10); // 每10毫秒更新一次进度条
+
+            function frame() {
+                if (width >= 100) {
+                    clearInterval(interval); // 当进度条满时，清除定时器
+                } else {
+                    width++;
+                    progressBar.style.width = width + '%'; // 更新进度条宽度
+                }
+            }
+        };
+    </script>
+</body>
+</html>
