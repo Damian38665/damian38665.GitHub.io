@@ -1,5 +1,5 @@
 <head>
-    <title>为了防止网页被攻击，三秒后才能进入首页！</title>
+    <title>为了防止网页被攻击，6秒后才能进入首页！</title>
     <style>
         /* 定义进度条动画 */
         @keyframes progress {
@@ -29,7 +29,7 @@
 <body>
     <!-- 进度条 -->
     <div id="progressBar">
-        <div id="progressTitle">为了防止网页被攻击，三秒后才能进入首页！</div>
+        <div id="progressTitle">加载中  小陈安全</div>
     </div>
 
     <script>
@@ -37,7 +37,7 @@
             // 设置三秒后跳转
             setTimeout(function () {
                 location.href = '1.html';
-            }, 3000);
+            }, 6000);
 
             // 实现进度条加载效果
             let progressBar = document.getElementById('progressBar');
