@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #game {
+            text-align: center;
+            border: 2px solid #333;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+        }
+        #police {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: blue;
+        }
+        #thief {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+        }
+        button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <h1>警察抓小偷</h1>
+        <div id="police"></div>
+        <div id="thief"></div>
+        <p id="result"></p>
+        <button onclick="movePolice('up')">上</button>
+        <button onclick="movePolice('down')">下</button>
+        <button onclick="movePolice('left')">左</button>
+        <button onclick="movePolice('right')">右</button>
+    </div>
+
+    <script>
+        let police = document.getElementById('police');
+        let thief = document.getElementById('thief');
+        let result = document.getElementById('result');
+        let policePosition = { top: 0, left: 0 };
+        let thiefPosition = { top: Math.floor(Math.random() * (window.innerHeight - 50)), left: Math.floor(Math.random() * (window.innerWidth - 50)) };
+        thief.style.top = thiefPosition.top + 'px';
+        thief.style.left = thiefPosition.left + 'px';
+
+        function movePolice(direction) {
+            switch (direction) {
+                case 'up':
+                    policePosition.top -= 10;
+                    break;
+                case 'down':
+                    policePosition.top += 10;
+                    break;
+                case 'left':
+                    policePosition.left -= 10;
+                    break;
+                case 'right':
+                    policePosition.left += 10;
+                    break;
+            }
+            police.style.top = policePosition.top + 'px';
+            police.style.left = policePosition.left + 'px';
+            checkCatch();
+        }
+
+        function checkCatch() {
+            if (Math.abs(policePosition.top - thiefPosition.top) < 50 && Math.abs(policePosition.left - thiefPosition.left) < 50) {
+                result.innerText = "恭喜你！你抓到了小偷！";
+                document.querySelectorAll('button').forEach(button => button.disabled = true);
+            } else {
+                result.innerText = "继续努力！";
+            }
+        }
+    </script>
+</body>
+</html>
