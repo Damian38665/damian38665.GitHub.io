@@ -1,16 +1,187 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-<meta http-equiv="Content-Language" content="zh-cn" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>下载分享中心</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>江易宸 资源库 | 技术文档中心</title>
+    <style>
+        :root {
+            --primary: #24292e;
+            --secondary: #0366d6;
+            --accent: #28a745;
+            --background: #f6f8fa;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .file-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            padding: 1rem;
+        }
+
+        .file-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .file-icon {
+            font-size: 2rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+
+        .file-name {
+            color: var(--primary);
+            margin: 0 0 0.5rem;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .file-meta {
+            color: #666;
+            font-size: 0.9em;
+            margin: 0.5rem 0;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1.25rem;
+            background: var(--accent);
+            color: white !important;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: background 0.2s;
+            margin-top: 1rem;
+        }
+
+        .download-btn:hover {
+            background: #22863a;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--secondary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-alert {
+            background: #ffebee;
+            color: #b71c1c;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
 </head>
-
 <body>
+    <div class="container">
+        <div class="header">
+            <h1>📁 技术资源中心</h1>
+            <p>共 <span id="fileCount">0</span> 个可用文件</p>
+        </div>
 
-<p>维护</p>
+        <div id="loading" class="loader"></div>
+        <div id="fileList" class="file-list"></div>
+        <div id="error" class="error-alert" style="display: none;"></div>
+    </div>
 
+    <script>
+        // 配置信息（需要用户自行修改）
+        const CONFIG = {
+            repo: 'damian38665/download', // 例如：octocat/Hello-World
+            path: '/',        // 要显示的目录路径
+            branch: 'main',  // 分支名称
+            token: ''        // 个人访问令牌（需要 repo 权限）
+        };
+
+        // 获取文件列表
+        async function fetchFiles() {
+            try {
+                const response = await fetch(
+                    `https://api.github.com/repos/${CONFIG.repo}/contents/${CONFIG.path}?ref=${CONFIG.branch}`, 
+                    {
+                        headers: CONFIG.token ? { Authorization: `token ${CONFIG.token}` } : {}
+                    }
+                );
+
+                if (!response.ok) throw new Error('获取文件列表失败');
+                const files = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                renderFiles(files.filter(file => file.type === 'file'));
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 
+                    `错误: ${error.message} (请检查配置或网络连接)`;
+            }
+        }
+
+        // 渲染文件列表
+        function renderFiles(files) {
+            const container = document.getElementById('fileList');
+            document.getElementById('fileCount').textContent = files.length;
+
+            const html = files.map(file => `
+                <div class="file-card">
+                    <div class="file-icon">📄</div>
+                    <h3 class="file-name">${file.name}</h3>
+                    <div class="file-meta">
+                        <div>大小: ${(file.size / 1024).toFixed(2)} KB</div>
+                        <div>更新: ${new Date(file.updated_at).toLocaleDateString()}</div>
+                    </div>
+                    <a href="${file.download_url}" class="download-btn" download>
+                        下载文件
+                    </a>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        // 初始化
+        fetchFiles();
+    </script>
 </body>
-
 </html>
