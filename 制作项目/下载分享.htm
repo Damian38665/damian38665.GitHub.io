@@ -1,272 +1,238 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub仓库浏览器</title>
+    <title>下载中心 - 蓝奏云资源</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
         }
 
-        .input-group {
-            margin-bottom: 20px;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            position: relative;
         }
 
-        input[type="text"] {
-            padding: 8px;
-            width: 200px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-right: 10px;
-        }
-
-        button {
-            padding: 8px 16px;
-            background-color: #2ea44f;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #22863a;
-        }
-
-        .breadcrumb {
-            margin-bottom: 15px;
-            padding: 10px;
-            background: white;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .breadcrumb a {
-            color: #0366d6;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .breadcrumb a:hover {
-            color: #054da1;
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .file-list {
-            background: white;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            list-style: none;
         }
 
         .file-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            margin: 15px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        .file-item:last-child {
-            border-bottom: none;
+        .file-item:hover {
+            transform: translateX(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .file-item img {
-            margin-right: 8px;
-            width: 20px;
-            height: 20px;
+        .file-name {
+            font-size: 1.1em;
+            color: #34495e;
+            flex-grow: 1;
         }
 
-        .download-link {
-            color: #0366d6;
+        .download-btn {
+            background: #3498db;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 8px;
             text-decoration: none;
-            margin-left: auto;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        .download-link:hover {
-            background-color: #f6f8fa;
-        }
-
-        .search-container {
-            margin-bottom: 15px;
+            transition: all 0.3s ease;
             display: flex;
-            gap: 10px;
+            align-items: center;
+            gap: 8px;
         }
 
-        .search-container input {
-            flex: 1;
+        .download-btn:hover {
+            background: #2980b9;
+            transform: scale(1.05);
         }
 
-        .welcome-notification {
+        .download-btn::after {
+            content: '↓';
+            font-weight: bold;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            z-index: 10;
+        }
+
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #2ea44f;
+            top: 20px;
+            right: -300px;
+            background: #27ae60;
             color: white;
             padding: 15px 25px;
-            border-radius: 4px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            animation: slideIn 0.5s ease-out;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: right 0.5s ease;
         }
 
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
+        .notification.show {
+            right: 20px;
+        }
+
+        .welcome-message {
+            text-align: center;
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-top: 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .welcome-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
             }
-            to {
-                transform: translateX(0);
-                opacity: 1;
+            
+            .file-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .download-btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
-    <div class="input-group">
-        <input type="text" id="repo" placeholder="用户名/仓库名 (例如: octocat/hello-world)">
-        <input type="text" id="branch" placeholder="分支名 (默认: main)" value="main">
-        <button onclick="loadRepository()">加载仓库</button>
+    <div class="container">
+        <h1>📥 Damian的下载中心</h1>
+        <div class="loading" id="loading">
+            <div class="loader"></div>
+        </div>
+        <ul class="file-list" id="fileList">
+            <!-- 文件列表将通过JavaScript动态生成 -->
+        </ul>
+        <div class="welcome-message" id="welcomeMessage">
+            欢迎来到下载界面！
+        </div>
     </div>
 
-    <div class="search-container">
-        <input type="text" id="searchInput" placeholder="搜索文件或文件夹..." oninput="filterContents()">
+    <div class="notification" id="notification">
+        文件加载完成！
     </div>
-
-    <div class="breadcrumb" id="breadcrumb"></div>
-    <div class="file-list" id="fileList"></div>
 
     <script>
-        // 显示欢迎通知
-        function showWelcomeNotification() {
-            const notification = document.createElement('div');
-            notification.className = 'welcome-notification';
-            notification.textContent = '欢迎来到GitHub仓库浏览器！';
-            document.body.appendChild(notification);
-
-            // 3秒后自动消失
-            setTimeout(() => {
-                notification.style.opacity = '0';
+        // 模拟从蓝奏云分享链接中获取文件列表
+        function fetchFilesFromLanzou() {
+            return new Promise((resolve) => {
                 setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 3000);
+                    resolve([
+                        { name: '办公软件安装包', url: 'https://example.lanzoue.com/xxxxxxxxx' },
+                        { name: '设计素材合集', url: 'https://example.lanzoue.com/yyyyyyyyy' },
+                        { name: '电子书资源包', url: 'https://example.lanzoue.com/zzzzzzzzz' }
+                    ]);
+                }, 2000); // 模拟2秒延迟
+            });
         }
 
-        let currentRepo = null;
-        let currentPath = [];
-        let allContents = [];
-
-        // 页面加载完成后显示欢迎通知
-        document.addEventListener('DOMContentLoaded', showWelcomeNotification);
-
-        async function loadRepository() {
-            const repoInput = document.getElementById('repo').value;
-            const branchInput = document.getElementById('branch').value || 'main';
-            
-            if (!repoInput.includes('/')) {
-                alert('请输入正确的仓库格式：用户名/仓库名');
-                return;
-            }
-
-            currentRepo = {
-                owner: repoInput.split('/')[0],
-                repo: repoInput.split('/')[1],
-                branch: branchInput
-            };
-
-            currentPath = [];
-            await loadContents();
-        }
-
-        async function loadContents() {
-            if (!currentRepo) return;
-
-            const path = currentPath.join('/');
-            const apiUrl = `https://api.github.com/repos/${currentRepo.owner}/${currentRepo.repo}/contents/${path}?ref=${currentRepo.branch}`;
+        // 动态生成文件列表
+        async function loadFiles() {
+            const loading = document.getElementById('loading');
+            const fileList = document.getElementById('fileList');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            const notification = document.getElementById('notification');
 
             try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('请求失败');
-                
-                const contents = await response.json();
-                allContents = contents;
-                renderBreadcrumb();
-                filterContents();
+                const files = await fetchFilesFromLanzou();
+                files.forEach(file => {
+                    const li = document.createElement('li');
+                    li.className = 'file-item';
+                    li.innerHTML = `
+                        <span class="file-name">${file.name}</span>
+                        <a href="${file.url}" class="download-btn" target="_blank">下载</a>
+                    `;
+                    fileList.appendChild(li);
+                });
+
+                // 隐藏加载动画
+                loading.style.display = 'none';
+
+                // 显示欢迎消息
+                welcomeMessage.classList.add('show');
+
+                // 显示通知
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
             } catch (error) {
-                alert('错误: ' + error.message);
+                console.error('加载文件失败:', error);
+                loading.innerHTML = '加载失败，请稍后重试。';
             }
         }
 
-        function filterContents() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = allContents.filter(item => 
-                item.name.toLowerCase().includes(searchTerm)
-            );
-            renderFileList(filtered);
-        }
-
-        function renderBreadcrumb() {
-            const breadcrumb = document.getElementById('breadcrumb');
-            let pathParts = [];
-            let html = '<a href="#" onclick="navigateTo(-1)">根目录</a>';
-
-            currentPath.forEach((part, index) => {
-                pathParts.push(part);
-                html += ` / <a href="#" onclick="navigateTo(${index})">${part}</a>`;
-            });
-
-            breadcrumb.innerHTML = html;
-        }
-
-        function navigateTo(index) {
-            if (index === -1) {
-                currentPath = [];
-            } else {
-                currentPath = currentPath.slice(0, index + 1);
-            }
-            loadContents();
-        }
-
-        function renderFileList(contents) {
-            const fileList = document.getElementById('fileList');
-            fileList.innerHTML = '';
-
-            contents.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'file-item';
-                
-                if (item.type === 'dir') {
-                    div.innerHTML = `
-                        <img src="https://cdn-icons-png.flaticon.com/512/716/716784.png" alt="文件夹">
-                        <a href="#" onclick="enterFolder('${item.name}')">${item.name}</a>
-                    `;
-                } else {
-                    const downloadUrl = `https://raw.githubusercontent.com/${currentRepo.owner}/${currentRepo.repo}/${currentRepo.branch}/${item.path}`;
-                    div.innerHTML = `
-                        <img src="https://cdn-icons-png.flaticon.com/512/136/136528.png" alt="文件">
-                        ${item.name}
-                        <a href="${downloadUrl}" class="download-link" download>下载</a>
-                    `;
-                }
-
-                fileList.appendChild(div);
-            });
-        }
-
-        function enterFolder(folderName) {
-            currentPath.push(folderName);
-            loadContents();
-        }
+        // 页面加载完成后开始加载文件
+        window.onload = loadFiles;
     </script>
 </body>
 </html>
