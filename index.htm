@@ -1,51 +1,195 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-<meta http-equiv="Content-Language" content="zh-cn" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<style type="text/css">
-.style1 {
-				color: #008000;
-				text-align: center;
-				font-size: xx-large;
-				font-family: 黑体;
-}
-.style2 {
-				text-align: left;
-				font-size: x-large;
-				font-family: 黑体;
-}
-.style3 {
-				text-align: left;
-				font-size: xx-large;
-				font-family: 黑体;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>江易宸的创意空间</title>
+    <style>
+        :root {
+            --grass: #7CB342;
+            --wood: #8D6E63;
+            --stone: #9E9E9E;
+            --gold: #FFD54F;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Pixelify Sans', sans-serif;
+        }
+
+        body {
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: 
+                linear-gradient(rgba(124, 179, 66, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(124, 179, 66, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .container {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            max-width: 800px;
+        }
+
+        .title-box {
+            background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAOVBMVEUAAAD/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDP/zDPuDp7ZAAAADnRSTlMAESIzRJTdRHZ3iJm7q8vWlER6AAAAwElEQVQ4y6WU2w6DMAhEoYByEfH//7UUtC0xazZ5qC8+MDOUQ0CgE0LZ4lQl5H3uCkGjz5A4hT0kR+ApwD0BcA9Qm4B8i7sD5FvcHSCf4u4A+RR3B8inuDtAPsXdAfIp7g6QT3F3gHyKuwPkU9wdIJ/i7gD5FHcHyKe4O0A+xd0B8iXuDZBPcW+AfIq7A+RT3Bsgn+LeAPkU9wbIp7g3QD7FvQHyKe4NkE9xb4B8insD5FP8BwDdXw2MZz+HAAAAAElFTkSuQmCC') no-repeat center/contain;
+            padding: 2rem 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .title {
+            font-size: 3rem;
+            color: var(--grass);
+            text-shadow: 2px 2px 0 #5a823c;
+            margin: 1rem 0;
+            position: relative;
+            display: inline-block;
+        }
+
+        .title::after {
+            content: '⚡';
+            position: absolute;
+            right: -30px;
+            top: -15px;
+            font-size: 1.8rem;
+            animation: spark 1.5s ease-in-out infinite;
+        }
+
+        .nav-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        .pixel-button {
+            padding: 1.2rem;
+            border: 3px solid;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background: white;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+        }
+
+        .pixel-button::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .download-btn {
+            color: var(--grass);
+            border-color: var(--grass);
+            background: linear-gradient(45deg, #f1f8e9, #ffffff);
+        }
+
+        .work-btn {
+            color: var(--wood);
+            border-color: var(--wood);
+            background: linear-gradient(45deg, #efebe9, #ffffff);
+        }
+
+        .contact-btn {
+            color: var(--stone);
+            border-color: var(--stone);
+            background: linear-gradient(45deg, #f5f5f5, #ffffff);
+        }
+
+        .pixel-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 6px 6px 0 rgba(0,0,0,0.15);
+        }
+
+        .pixel-button:active {
+            transform: translateY(1px);
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        .minecraft-grid {
+            margin: 3rem auto;
+            width: 80%;
+            height: 8px;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--grass) 0px, var(--grass) 20px,
+                var(--wood) 20px, var(--wood) 40px,
+                var(--stone) 40px, var(--stone) 60px
+            );
+        }
+
+        @keyframes spark {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(20deg); }
+        }
+
+        @media (max-width: 600px) {
+            .title {
+                font-size: 2.2rem;
+            }
+            .nav-links {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
 </head>
-
 <body>
+    <div class="container">
+        <div class="title-box">
+            <h1 class="title">江易宸</h1>
+        </div>
+        
+        <div class="nav-links">
+            <a href="https://damian38665.github.io/制作项目/下载分享.htm" class="pixel-button download-btn">
+                <span style="font-size:1.3em">⬇️</span><br>
+                下载资源库
+            </a>
 
-<p class="style1">Damian的个人网站</p>
+            <a href="#applications" class="pixel-button work-btn">
+                <span style="font-size:1.3em">💻</span><br>
+                创意作品集
+            </a>
 
-<p class="style2">我的个人简介：</p>
-<p class="style2">我喜欢play minecraft</p>
-<p class="style2">什么，你还想知道其他东西？</p>
-<p class="style3">滚</p>
-<p class="style3">制作项目：</p>
-<ul>
-				<li>
-				<p class="style3"><a href="制作项目/我的博客.htm">我的博客</a></p>
-				</li>
-				<li>
-				<p class="style3"><a href="制作项目/我的软件库（自制软件大集合）.htm">
-				我的软件库（自制软件大集合）</a></p>
-				</li>
-				<li>
-				<p class="style3"><a href="制作项目/下载分享.htm">下载分享</a></p>
-				</li>
-</ul>
+            <a href="#contact" class="pixel-button contact-btn">
+                <span style="font-size:1.3em">📮</span><br>
+                联系我
+            </a>
+        </div>
 
+        <div class="minecraft-grid"></div>
+
+        <p style="color:#666;margin-top:2rem">
+            🎮 当前正在游玩：Minecraft 1.12.2 | 🌐 已在线：127小时
+        </p>
+    </div>
+
+    <script>
+        // 添加按钮交互音效
+        const buttons = document.querySelectorAll('.pixel-button');
+        buttons.forEach(btn => {
+            btn.addEventListener('mousedown', () => {
+                btn.style.transform = 'scale(0.95)';
+            });
+            btn.addEventListener('mouseup', () => {
+                btn.style.transform = '';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = '';
+            });
+        });
+    </script>
 </body>
-
 </html>
