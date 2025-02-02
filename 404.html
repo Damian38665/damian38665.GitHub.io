@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: scale(0);
+            animation: scaleIn 0.5s ease-out forwards;
+        }
+
+        @keyframes scaleIn {
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .error-code {
+            font-size: 8rem;
+            font-weight: 700;
+            color: #2d3436;
+            text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .message {
+            font-size: 1.5rem;
+            color: #636e72;
+            margin-bottom: 2rem;
+            max-width: 500px;
+        }
+
+        .home-btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            color: white;
+            background: linear-gradient(45deg, #4ecdc4, #45b7af);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .home-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(45deg, #45b7af, #3da89f);
+        }
+
+        .home-btn:active {
+            transform: scale(0.95);
+        }
+
+        .home-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                120deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        .home-btn:hover::before {
+            left: 100%;
+        }
+
+        /* 背景动画元素 */
+        .bg-bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateX(-100px) rotate(60deg);
+            }
+            50% {
+                transform: translateY(-100px) rotate(120deg);
+            }
+            75% {
+                transform: translateX(100px) rotate(180deg);
+            }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 5rem;
+            }
+            .message {
+                font-size: 1.2rem;
+            }
+            .container {
+                margin: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景气泡 -->
+    <div class="bg-bubble" style="width: 150px; height: 150px; top: 10%; left: 20%;"></div>
+    <div class="bg-bubble" style="width: 100px; height: 100px; top: 70%; left: 80%;"></div>
+    <div class="bg-bubble" style="width: 200px; height: 200px; top: 40%; left: 70%;"></div>
+
+    <div class="container">
+        <div class="error-code">404</div>
+        <p class="message">哎呀！您访问的页面好像去外太空旅行了...</p>
+        <a href="/" class="home-btn">返回首页</a>
+    </div>
+</body>
+</html>
