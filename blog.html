@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GitHub博客</title>
+    <meta charset="utf-8">
+    <style>
+        /* 基础样式 */
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .post-list { margin-bottom: 30px; }
+        .post-item { margin: 10px 0; cursor: pointer; color: blue; }
+        .post-item:hover { text-decoration: underline; }
+        .post-content { display: none; white-space: pre-wrap; }
+        .back-btn { margin: 20px 0; padding: 10px; cursor: pointer; }
+        .post-content img { max-width: 100%; height: auto; }
+    </style>
+</head>
+<body>
+    <h1>我的博客</h1>
+    <div class="post-list" id="postList"></div>
+    <div id="postContent"></div>
+    
+    <script>
+        // 配置信息
+        const REPO = 'damian38665/damian38665.github.io';  // 修改为你的仓库信息
+        const POSTS_DIR = 'posts';  // 文章目录
+        
+        // 初始化加载文章列表
+        window.onload = async () => {
+            const posts = await getPostList();
+            renderPostList(posts);
+        };
+
+        // 获取文章列表
+        async function getPostList() {
+            const url = `https://api.github.com/repos/${REPO}/contents/${POSTS_DIR}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('无法获取文章列表');
+                const files = await response.json();
+                return files.filter(file => file.name.endsWith('.md')); // 假设是markdown文件
+            } catch (error) {
+                console.error('获取文章列表失败:', error);
+                return [];
+            }
+        }
+
+        // 渲染文章列表
+        function renderPostList(posts) {
+            const container = document.getElementById('postList');
+            if (!container) return;
+            
+            if (posts.length === 0) {
+                container.innerHTML = '<p>暂无文章</p>';
+                return;
+            }
+            
+            container.innerHTML = '<h2>文章列表</h2>';
+            posts.forEach(post => {
+                const div = document.createElement('div');
+                div.className = 'post-item';
+                div.textContent = post.name.replace('.md', '');
+                div.onclick = () => loadPostContent(post.path);
+                container.appendChild(div);
+            });
+        }
+
+        // 加载文章内容
+        async function loadPostContent(path) {
+            const rawUrl = `https://raw.githubusercontent.com/${REPO}/main/${path}`;
+            try {
+                const response = await fetch(rawUrl);
+                if (!response.ok) throw new Error('无法加载文章内容');
+                const content = await response.text();
+                
+                document.getElementById('postList').style.display = 'none';
+                const contentDiv = document.getElementById('postContent');
+                contentDiv.innerHTML = `
+                    <button class="back-btn" onclick="location.reload()">← 返回列表</button>
+                    <div class="post-content">${marked.parse(content)}</div>
+                `;
+                contentDiv.style.display = 'block';
+            } catch (error) {
+                console.error('加载文章内容失败:', error);
+                alert('加载文章失败，请稍后重试');
+            }
+        }
+    </script>
+    <!-- 引入Markdown解析库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</body>
+</html>
