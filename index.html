@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Damian | 开发者与创造者</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --hover-color: #1976D2;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #ffffff;
+            color: #2d3436;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            line-height: 1.6;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 12px 24px -6px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+            max-width: 480px;
+            width: 90%;
+            margin: 2rem;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 1.8rem;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin: 0 0 0.5rem;
+            color: #2d3436;
+            letter-spacing: -0.5px;
+        }
+
+        .bio {
+            font-size: 1.1rem;
+            color: #636e72;
+            margin-bottom: 2rem;
+        }
+
+        .button-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .magic-button {
+            position: relative;
+            background: linear-gradient(135deg, var(--primary-color), #42A5F5);
+            color: white !important;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* 水波纹效果 */
+        .ripple {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            animation: ripple 1.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: translate(-50%, -50%) scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="profile-header">
+            <h1>Damian</h1>
+            <p class="bio">我是一个爱编程的人，还喜欢玩Minecraft</p>
+        </div>
+
+        <div class="button-grid">
+            <a href="https://damian38665.github.io/404" class="magic-button">前往个人下载页面</a>
+            <a href="https://damian38665.github.io/404" class="magic-button">备用下载链接</a>
+            <a href="https://damian38665.github.io/404" class="magic-button">开发者博客</a>
+            <a href="https://damian38665.github.io/404" class="magic-button">个人制作项目</a>
+            <a href="https://damian38665.github.io/404" target="_blank" class="magic-button">哔哩哔哩频道</a>
+            <a href="https://damian38665.github.io/404" target="_blank" class="magic-button">知乎专栏</a>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.magic-button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault(); // 阻止默认跳转行为
+
+                // 获取点击位置相对按钮的坐标
+                const rect = button.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // 创建水波纹
+                const ripple = document.createElement('div');
+                ripple.className = 'ripple';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                button.appendChild(ripple);
+
+                // 动画结束后移除元素
+                ripple.addEventListener('animationend', () => {
+                    ripple.remove();
+                });
+
+                // 1秒后跳转
+                setTimeout(() => {
+                    window.location.href = button.href; // 跳转到按钮的链接
+                }, 1000); // 1000毫秒 = 1秒
+            });
+        });
+    </script>
+</body>
+</html>
