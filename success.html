@@ -36,12 +36,18 @@
     </div>
 
     <script>
+        // 配置信息
+        const owner = 'damian2021'; // 你的 Gitee 用户名
+        const repo = '8004'; // 仓库名
+        const token = '9e4e0289fbbcbbf9646aac16d1fe007a'; // 你的私人令牌
+        const filePath = '1.txt'; // 存储用户数据的文件
+
         // 检查用户是否登录
         const isLoggedIn = localStorage.getItem('isLoggedIn');
         const currentUser = localStorage.getItem('currentUser');
 
         if (!isLoggedIn || !currentUser) {
-            window.location.href = 'login.html'; // 未登录则跳转到登录页面
+            window.location.href = 'index.html'; // 未登录则跳转到登录页面
         }
 
         // 显示用户信息
@@ -131,4 +137,4 @@
         }
     </script>
 </body>
-  </html>
+</html>
