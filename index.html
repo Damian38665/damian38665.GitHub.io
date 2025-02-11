@@ -1,0 +1,41 @@
+<!-- chat.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>聊天室</title>
+    <style>
+        body { max-width: 800px; margin: 0 auto; padding: 20px; }
+        #chatBox { height: 400px; border: 1px solid #ddd; overflow-y: auto; margin-bottom: 20px; padding: 10px; }
+        .message { margin: 10px 0; padding: 8px; background: #f5f5f5; border-radius: 4px; }
+        input[type="text"] { width: 80%; padding: 8px; }
+        button { width: 18%; padding: 8px; }
+    </style>
+</head>
+<body>
+    <h2>欢迎来到聊天室，<span id="username"></span>！</h2>
+    <div id="chatBox"></div>
+    <div>
+        <input type="text" id="messageInput" placeholder="输入消息">
+        <button onclick="sendMessage()">发送</button>
+    </div>
+
+    <script>
+        // 显示用户名
+        document.getElementById('username').textContent = localStorage.getItem('currentUser') || '游客';
+
+        function sendMessage() {
+            const message = document.getElementById('messageInput').value;
+            if (!message) return;
+            
+            const chatBox = document.getElementById('chatBox');
+            const msgElement = document.createElement('div');
+            msgElement.className = 'message';
+            msgElement.innerHTML = `<strong>${localStorage.getItem('currentUser')}:</strong> ${message}`;
+            chatBox.appendChild(msgElement);
+            
+            document.getElementById('messageInput').value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
