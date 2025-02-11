@@ -3,37 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录/注册</title>
+    <title>用户登录</title>
     <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.bootcdn.net/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet">
     <style>
+        :root {
+            --gradient-start: #6a11cb;
+            --gradient-end: #2575fc;
+        }
         body {
-            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .auth-box {
-            max-width: 400px;
-            width: 100%;
-            margin: 20px;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
-            border-radius: 15px;
+        .auth-card {
             background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
         }
         .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #0d6efd;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0d6efd;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 24px;
+            height: 24px;
             animation: spin 1s linear infinite;
-            margin: 0 auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -42,73 +43,72 @@
     </style>
 </head>
 <body>
-    <div class="auth-box">
+    <div class="auth-card">
+        <h3 class="text-center mb-4">欢迎登录</h3>
         <form id="loginForm">
-            <h3 class="text-center mb-4">欢迎登录</h3>
             <div class="mb-3">
-                <input type="text" class="form-control" id="loginUsername" placeholder="用户名" required>
+                <input type="text" class="form-control" id="username" placeholder="用户名" required>
             </div>
             <div class="mb-3">
-                <input type="password" class="form-control" id="loginPassword" placeholder="密码" required>
+                <input type="password" class="form-control" id="password" placeholder="密码" required>
             </div>
-            <button type="submit" class="btn btn-primary w-100" id="loginBtn">
+            <button type="submit" class="btn btn-primary w-100">
                 <span id="loginText">登录</span>
-                <div id="loginLoader" class="loader" style="display: none;"></div>
+                <div id="loginSpinner" class="loader d-none"></div>
             </button>
         </form>
-
         <div class="text-center mt-3">
-            <a href="#" id="switchToRegister">没有账户？立即注册</a>
+            <a href="register.html" class="text-decoration-none">没有账号？立即注册</a>
         </div>
     </div>
 
     <script src="https://cdn.bootcdn.net/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
     <script>
-        const API = {
-            repo: 'https://gitee.com/api/v5/repos/damian2021/8004/contents/1.txt',
-            token: '9e4e0289fbbcbbf9646aac16d1fe007a'
-        };
-
-        // 切换注册表单
-        document.getElementById('switchToRegister').addEventListener('click', () => {
-            window.location.href = 'register.html';
-        });
-
         // 登录功能
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            document.getElementById('loginText').classList.add('d-none');
+            document.getElementById('loginSpinner').classList.remove('d-none');
 
-            // 显示加载动画
-            document.getElementById('loginText').style.display = 'none';
-            document.getElementById('loginLoader').style.display = 'block';
+            // 管理员特殊处理
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if(username === 'admin' && password === 'Aa814814123456') {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('username', 'admin');
+                window.location.href = 'admin.html';
+                return;
+            }
 
             try {
-                const res = await fetch(API.repo, {
-                    headers: { Authorization: `Bearer ${API.token}` }
+                const res = await fetch('https://gitee.com/api/v5/repos/damian2021/8004/contents/1.txt', {
+                    headers: { Authorization: 'Bearer 9e4e0289fbbcbbf9646aac16d1fe007a' }
                 });
-                const fileData = await res.json();
-                const users = atob(fileData.content).split('\n');
+                const data = await res.json();
+                const users = atob(data.content).split('\n');
 
-                const isValid = users.some(user => {
-                    const [u, p] = user.split(':');
-                    return u === username && p === password;
+                const validUser = users.find(u => {
+                    const [uName, uPass] = u.split(':');
+                    return uName === username && uPass === password;
                 });
 
-                if (isValid) {
+                if(validUser) {
                     localStorage.setItem('isLoggedIn', 'true');
                     localStorage.setItem('username', username);
-                    toastr.success('登录成功，即将跳转！');
-                    setTimeout(() => location.href = 'index.html', 1000);
+                    toastr.success('登录成功');
+                    setTimeout(() => window.location.href = 'index.html', 1500);
                 } else {
-                    toastr.error('用户名或密码错误！');
+                    toastr.error('用户名或密码错误');
                 }
             } catch (error) {
-                toastr.error('登录失败：' + error.message);
+                toastr.error('登录失败: ' + error.message);
             } finally {
-                document.getElementById('loginText').style.display = 'inline';
-                document.getElementById('loginLoader').style.display = 'none';
+                btn.disabled = false;
+                document.getElementById('loginText').classList.remove('d-none');
+                document.getElementById('loginSpinner').classList.add('d-none');
             }
         });
     </script>
