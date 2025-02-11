@@ -153,9 +153,9 @@
             .then(response => response.json())
             .then(data => {
                 const pointsData = atob(data.content).split('\n');
-                const userPoints = pointsData.find(p => p.split(':')[0] === document.getElementById('loginUsername').value);
-                if (userPoints) {
-                    document.getElementById('points').textContent = userPoints.split(':')[1];
+                const userEntry = pointsData.find(p => p.split(':')[0] === document.getElementById('loginUsername').value);
+                if (userEntry) {
+                    document.getElementById('points').textContent = userEntry.split(':')[1];
                 }
             });
         }
@@ -171,7 +171,13 @@
                 const pointsData = atob(data.content).split('\n');
                 const leaderboard = document.getElementById('leaderboard');
                 leaderboard.innerHTML = '';
-                pointsData.sort((a, b) => b.split(':')[1] - a.split(':')[1]).forEach(p => {
+                
+                // 排序时仅比较积分部分
+                pointsData.sort((a, b) => {
+                    const aPoints = parseInt(a.split(':')[1]);
+                    const bPoints = parseInt(b.split(':')[1]);
+                    return bPoints - aPoints;
+                }).forEach(p => {
                     const li = document.createElement('li');
                     li.textContent = `${p.split(':')[0]}: ${p.split(':')[1]} 分`;
                     leaderboard.appendChild(li);
@@ -181,6 +187,8 @@
 
         function signIn() {
             const username = document.getElementById('loginUsername').value;
+            const today = new Date().toISOString().split('T')[0]; // 获取当前日期（YYYY-MM-DD格式）
+
             fetch(`https://gitee.com/api/v5/repos/${giteeUser}/${giteeRepo}/contents/qq.txt`, {
                 headers: {
                     'Authorization': `token ${giteeToken}`
@@ -189,15 +197,30 @@
             .then(response => response.json())
             .then(data => {
                 const pointsData = atob(data.content).split('\n');
-                const userPoints = pointsData.find(p => p.split(':')[0] === username);
-                let newPoints = 0;
-                if (userPoints) {
-                    newPoints = parseInt(userPoints.split(':')[1]) + 10;
-                    pointsData[pointsData.indexOf(userPoints)] = `${username}:${newPoints}`;
-                } else {
-                    newPoints = 10;
-                    pointsData.push(`${username}:${newPoints}`);
+                const userEntry = pointsData.find(p => p.split(':')[0] === username);
+                
+                // 检查是否今天已经签到过
+                if (userEntry) {
+                    const lastSignDate = userEntry.split(':')[2]; // 格式：用户名:积分:最后签到日期
+                    if (lastSignDate === today) {
+                        alert('今日已签到，请明天再来！');
+                        return;
+                    }
                 }
+
+                // 更新积分和签到日期
+                let newPoints = 0;
+                let updatedEntry = '';
+                if (userEntry) {
+                    newPoints = parseInt(userEntry.split(':')[1]) + 2;
+                    updatedEntry = `${username}:${newPoints}:${today}`;
+                    pointsData[pointsData.indexOf(userEntry)] = updatedEntry;
+                } else {
+                    newPoints = 2;
+                    updatedEntry = `${username}:${newPoints}:${today}`;
+                    pointsData.push(updatedEntry);
+                }
+
                 const newContent = btoa(pointsData.join('\n'));
                 fetch(`https://gitee.com/api/v5/repos/${giteeUser}/${giteeRepo}/contents/qq.txt`, {
                     method: 'PUT',
