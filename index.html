@@ -223,7 +223,6 @@
             <!-- 登录表单 -->
             <div class="login-form">
                 <div class="form-group">
-                    体验账号:用户名:test，密码:1234
                     <input type="text" id="loginUser" placeholder="用户名">
                 </div>
                 <div class="form-group">
@@ -235,7 +234,6 @@
             <!-- 注册表单 -->
             <div class="register-form" style="display: none;">
                 <div class="form-group">
-                    注册不可以是中文
                     <input type="text" id="registerUser" placeholder="用户名">
                 </div>
                 <div class="form-group">
@@ -299,7 +297,7 @@
     <script>
         const GITEE = {
             repo: '8004',
-            token: '2c786eaaf71570a4cf59d7125ecdef1d',
+            token: 'b5a96c2df3774e1a8ded0ff0cc54cdfa',
             owner: 'damian2021'
         }
 
@@ -346,7 +344,7 @@
                 }
 
                 const response = await fetch(url, options);
-                if (!response.ok) throw new Error('数据库错误，请跟管理员联系，管理员: 何、江');
+                if (!response.ok) throw new Error('网络错误，请跟管理员联系，管理员: 何、江');
                 return response.json();
             } catch (error) {
                 showNotification(error.message, 'danger');
@@ -412,10 +410,7 @@
             const user = document.getElementById('registerUser').value;
             const pass = document.getElementById('registerPass').value;
 
-            if(user === ADMIN_CREDENTIALS.username) {
-                return showNotification('不能注册管理员账号');
-            }
-                       // 验证用户名
+            // 验证用户名
             if(user.trim() === '') {
                 return showNotification('用户名不能为空');
             }
@@ -429,7 +424,11 @@
             // 验证密码长度
             if(pass.length < 8) {
                 return showNotification('密码至少需要8个字符');
-            } 
+            }
+
+            if(user === ADMIN_CREDENTIALS.username) {
+                return showNotification('不能注册管理员账号');
+            }
 
             try {
                 const data = await giteeRequest('login.txt');
@@ -437,11 +436,14 @@
 
                 if(users.some(u => u.split(':')[0] === user)) {
                     return showNotification('用户名已存在');
-            }
+                }
 
-            await giteeRequest('login.txt', 'PUT', [...users, `${user}:${pass}:active`].join('\n'));
-            showNotification('注册成功');
-            switchTab('login');
+                await giteeRequest('login.txt', 'PUT', [...users, `${user}:${pass}:active`].join('\n'));
+                showNotification('注册成功');
+                switchTab('login');
+            } catch (error) {
+                showNotification('注册失败，请稍后重试');
+            }
         }
 
         // 签到功能
@@ -573,8 +575,10 @@
             }
 
             showNotification('用户信息更新成功');
+            loadUserList();
         }
 
+        // 删除用户
         async function deleteUser() {
             const username = document.getElementById('editUsername').value;
             
@@ -596,8 +600,10 @@
 
             showNotification('用户删除成功');
             document.getElementById('userDetails').style.display = 'none';
+            loadUserList();
         }
 
+        // 清除用户积分
         async function clearPoints() {
             const username = document.getElementById('editUsername').value;
             
@@ -614,9 +620,8 @@
             }
 
             showNotification('用户积分已清零');
+            loadUserDetails(username);
         }
-
-        // 其他辅助函数保持不变
     </script>
 </body>
 </html>
