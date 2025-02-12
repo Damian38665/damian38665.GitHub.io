@@ -346,7 +346,7 @@
                 }
 
                 const response = await fetch(url, options);
-                if (!response.ok) throw new Error('网络错误，请跟管理员联系，管理员: 何、江');
+                if (!response.ok) throw new Error('数据库错误，请跟管理员联系，管理员: 何、江');
                 return response.json();
             } catch (error) {
                 showNotification(error.message, 'danger');
@@ -429,7 +429,7 @@
             // 验证密码长度
             if(pass.length < 8) {
                 return showNotification('密码至少需要8个字符');
-             } 
+            } 
 
             try {
                 const data = await giteeRequest('login.txt');
@@ -437,7 +437,7 @@
 
                 if(users.some(u => u.split(':')[0] === user)) {
                     return showNotification('用户名已存在');
-                }
+            }
 
             await giteeRequest('login.txt', 'PUT', [...users, `${user}:${pass}:active`].join('\n'));
             showNotification('注册成功');
