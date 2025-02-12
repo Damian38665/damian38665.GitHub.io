@@ -8,6 +8,7 @@
         :root {
             --primary: #2196F3;
             --success: #4CAF50;
+            --danger: #f44336;
             --background: #f8f9fa;
         }
 
@@ -24,6 +25,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px;
         }
 
         .container {
@@ -31,7 +33,8 @@
             padding: 2rem;
             border-radius: 1.5rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            width: 400px;
+            width: 100%;
+            max-width: 500px;
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -107,7 +110,7 @@
             transform: translateY(-2px);
         }
 
-        .dashboard {
+        .dashboard, .admin-dashboard {
             display: none;
         }
 
@@ -136,6 +139,24 @@
 
         .notification.show {
             transform: translateX(0);
+        }
+
+        .admin-dashboard .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .admin-dashboard label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        .admin-dashboard button {
+            margin: 0.5rem 0;
+        }
+
+        .admin-dashboard button.danger {
+            background: var(--danger);
         }
     </style>
 </head>
@@ -178,9 +199,45 @@
         <div class="points">
             <span id="points">0</span> 积分
         </div>
-        <button class="checkin-btn" onclick="checkIn()">每日签到</button>
+        <button class="checkin-btn" onclick="checkIn()" id="checkinBtn">每日签到</button>
         <h3 style="margin: 2rem 0 1rem;">积分排行榜</h3>
         <div id="leaderboard"></div>
+    </div>
+
+    <!-- 后台管理 -->
+    <div class="container admin-dashboard" style="display: none;">
+        <h1>后台管理</h1>
+        <div class="form-group">
+            <input type="text" id="searchUser" placeholder="搜索用户名">
+            <button onclick="searchUser()">搜索</button>
+        </div>
+        <div id="userDetails" style="display: none;">
+            <h2>用户信息</h2>
+            <div class="form-group">
+                <label>用户名:</label>
+                <input type="text" id="editUsername">
+            </div>
+            <div class="form-group">
+                <label>密码:</label>
+                <input type="text" id="editPassword">
+            </div>
+            <div class="form-group">
+                <label>积分:</label>
+                <input type="number" id="editPoints">
+            </div>
+            <div class="form-group">
+                <label>状态:</label>
+                <select id="editStatus">
+                    <option value="active">正常</option>
+                    <option value="banned">封禁</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <button onclick="updateUser()">保存更改</button>
+                <button class="danger" onclick="deleteUser()">删除用户</button>
+                <button onclick="clearPoints()">清除积分</button>
+            </div>
+        </div>
     </div>
 
     <!-- 通知 -->
@@ -193,20 +250,13 @@
             owner: 'damian2021'
         }
 
-        let currentUser = null;
-
-        // 切换登录/注册表单
-        function switchTab(tab) {
-            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll(`.${tab}-form`).forEach(f => f.style.display = 'block');
-            document.querySelectorAll(`.auth-tab[onclick*="${tab}"]`).forEach(t => t.classList.add('active'));
-            
-            if(tab === 'login') {
-                document.querySelector('.register-form').style.display = 'none';
-            } else {
-                document.querySelector('.login-form').style.display = 'none';
-            }
+        const ADMIN_CREDENTIALS = {
+            username: 'admin',
+            password: 'Aa814814123456'
         }
+
+        let currentUser = null;
+        let lastCheckinDate = null;
 
         // 显示通知
         function showNotification(message, type = 'info') {
@@ -239,10 +289,64 @@
             return response.json();
         }
 
-        // 用户注册
+        // 切换登录/注册表单
+        function switchTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll(`.${tab}-form`).forEach(f => f.style.display = 'block');
+            document.querySelectorAll(`.auth-tab[onclick*="${tab}"]`).forEach(t => t.classList.add('active'));
+            
+            if(tab === 'login') {
+                document.querySelector('.register-form').style.display = 'none';
+            } else {
+                document.querySelector('.login-form').style.display = 'none';
+            }
+        }
+
+        // 登录功能
+        async function login() {
+            const user = document.getElementById('loginUser').value;
+            const pass = document.getElementById('loginPass').value;
+
+            // 管理员特殊验证
+            if(user === ADMIN_CREDENTIALS.username) {
+                if(pass === ADMIN_CREDENTIALS.password) {
+                    currentUser = user;
+                    document.querySelector('.auth-container').style.display = 'none';
+                    document.querySelector('.admin-dashboard').style.display = 'block';
+                    return;
+                } else {
+                    return showNotification('管理员密码错误');
+                }
+            }
+
+            // 普通用户验证
+            const data = await giteeRequest('login.txt');
+            const users = data.content ? atob(data.content).split('\n') : [];
+            
+            const userData = users.find(u => {
+                const [uUser, uPass, status] = u.split(':');
+                return uUser === user && uPass === pass && status !== 'banned';
+            });
+
+            if(userData) {
+                currentUser = user;
+                document.querySelector('.auth-container').style.display = 'none';
+                document.querySelector('.dashboard').style.display = 'block';
+                document.getElementById('username').textContent = user;
+                loadDashboard();
+            } else {
+                showNotification('用户名或密码错误，或账号被封禁');
+            }
+        }
+
+        // 注册功能
         async function register() {
             const user = document.getElementById('registerUser').value;
             const pass = document.getElementById('registerPass').value;
+
+            if(user === ADMIN_CREDENTIALS.username) {
+                return showNotification('不能注册管理员账号');
+            }
 
             const data = await giteeRequest('login.txt');
             const users = data.content ? atob(data.content).split('\n') : [];
@@ -251,33 +355,39 @@
                 return showNotification('用户名已存在');
             }
 
-            await giteeRequest('login.txt', 'PUT', [...users, `${user}:${pass}`].join('\n'));
+            await giteeRequest('login.txt', 'PUT', [...users, `${user}:${pass}:active`].join('\n'));
             showNotification('注册成功');
             switchTab('login');
         }
 
-        // 用户登录
-        async function login() {
-            const user = document.getElementById('loginUser').value;
-            const pass = document.getElementById('loginPass').value;
-
-            const data = await giteeRequest('login.txt');
-            const users = data.content ? atob(data.content).split('\n') : [];
-            
-            const valid = users.some(u => {
-                const [uUser, uPass] = u.split(':');
-                return uUser === user && uPass === pass;
-            });
-
-            if(valid) {
-                currentUser = user;
-                document.querySelector('.auth-container').style.display = 'none';
-                document.querySelector('.dashboard').style.display = 'block';
-                document.getElementById('username').textContent = user;
-                loadDashboard();
-            } else {
-                showNotification('用户名或密码错误');
+        // 签到功能
+        async function checkIn() {
+            const today = new Date().toLocaleDateString();
+            if(lastCheckinDate === today) {
+                return showNotification('今天已经签到过了');
             }
+
+            const data = await giteeRequest('star.txt');
+            let records = data.content ? atob(data.content).split('\n') : [];
+            
+            const index = records.findIndex(r => r.startsWith(currentUser));
+            const [user, points, lastDate] = index >= 0 ? records[index].split(':') : [currentUser, 0, ''];
+
+            if(lastDate === today) {
+                return showNotification('今天已经签到过了');
+            }
+
+            const newPoints = parseInt(points) + 2;
+            if(index >= 0) {
+                records[index] = `${user}:${newPoints}:${today}`;
+            } else {
+                records.push(`${user}:${newPoints}:${today}`);
+            }
+
+            await giteeRequest('star.txt', 'PUT', records.join('\n'));
+            showNotification('签到成功 +2 积分', 'success');
+            lastCheckinDate = today;
+            loadDashboard();
         }
 
         // 加载首页数据
@@ -300,23 +410,105 @@
                 .join('');
         }
 
-        // 签到功能
-        async function checkIn() {
-            const data = await giteeRequest('star.txt');
-            let records = data.content ? atob(data.content).split('\n') : [];
-            
-            const index = records.findIndex(r => r.startsWith(currentUser));
-            const currentPoints = index >= 0 ? parseInt(records[index].split(':')[1]) : 0;
-            
-            if(index >= 0) {
-                records[index] = `${currentUser}:${currentPoints + 2}`;
-            } else {
-                records.push(`${currentUser}:2`);
+        // 后台管理功能
+        async function searchUser() {
+            const username = document.getElementById('searchUser').value;
+            if(username === ADMIN_CREDENTIALS.username) {
+                return showNotification('不能修改管理员信息');
             }
 
-            await giteeRequest('star.txt', 'PUT', records.join('\n'));
-            showNotification('签到成功 +2 积分', 'success');
-            loadDashboard();
+            const data = await giteeRequest('login.txt');
+            const users = data.content ? atob(data.content).split('\n') : [];
+            
+            const userData = users.find(u => u.startsWith(username));
+            if(userData) {
+                const [user, pass, status] = userData.split(':');
+                document.getElementById('editUsername').value = user;
+                document.getElementById('editPassword').value = pass;
+                document.getElementById('editStatus').value = status || 'active';
+                
+                const starData = await giteeRequest('star.txt');
+                const starRecords = starData.content ? atob(starData.content).split('\n') : [];
+                const pointsRecord = starRecords.find(r => r.startsWith(user));
+                document.getElementById('editPoints').value = pointsRecord ? pointsRecord.split(':')[1] : 0;
+                
+                document.getElementById('userDetails').style.display = 'block';
+            } else {
+                showNotification('用户未找到');
+            }
+        }
+
+        async function updateUser() {
+            const oldUsername = document.getElementById('searchUser').value;
+            const newUsername = document.getElementById('editUsername').value;
+            const newPassword = document.getElementById('editPassword').value;
+            const newPoints = document.getElementById('editPoints').value;
+            const newStatus = document.getElementById('editStatus').value;
+
+            if(oldUsername === ADMIN_CREDENTIALS.username || newUsername === ADMIN_CREDENTIALS.username) {
+                return showNotification('不能修改管理员信息');
+            }
+
+            // 更新登录信息
+            const loginData = await giteeRequest('login.txt');
+            let users = loginData.content ? atob(loginData.content).split('\n') : [];
+            const userIndex = users.findIndex(u => u.startsWith(oldUsername));
+            if(userIndex >= 0) {
+                users[userIndex] = `${newUsername}:${newPassword}:${newStatus}`;
+                await giteeRequest('login.txt', 'PUT', users.join('\n'));
+            }
+
+            // 更新积分信息
+            const starData = await giteeRequest('star.txt');
+            let starRecords = starData.content ? atob(starData.content).split('\n') : [];
+            const starIndex = starRecords.findIndex(r => r.startsWith(oldUsername));
+            if(starIndex >= 0) {
+                starRecords[starIndex] = `${newUsername}:${newPoints}`;
+                await giteeRequest('star.txt', 'PUT', starRecords.join('\n'));
+            }
+
+            showNotification('用户信息更新成功');
+        }
+
+        async function deleteUser() {
+            const username = document.getElementById('editUsername').value;
+            
+            if(username === ADMIN_CREDENTIALS.username) {
+                return showNotification('不能删除管理员');
+            }
+
+            // 删除登录信息
+            const loginData = await giteeRequest('login.txt');
+            let users = loginData.content ? atob(loginData.content).split('\n') : [];
+            users = users.filter(u => !u.startsWith(username));
+            await giteeRequest('login.txt', 'PUT', users.join('\n'));
+
+            // 删除积分信息
+            const starData = await giteeRequest('star.txt');
+            let starRecords = starData.content ? atob(starData.content).split('\n') : [];
+            starRecords = starRecords.filter(r => !r.startsWith(username));
+            await giteeRequest('star.txt', 'PUT', starRecords.join('\n'));
+
+            showNotification('用户删除成功');
+            document.getElementById('userDetails').style.display = 'none';
+        }
+
+        async function clearPoints() {
+            const username = document.getElementById('editUsername').value;
+            
+            if(username === ADMIN_CREDENTIALS.username) {
+                return showNotification('不能修改管理员信息');
+            }
+
+            const starData = await giteeRequest('star.txt');
+            let starRecords = starData.content ? atob(starData.content).split('\n') : [];
+            const starIndex = starRecords.findIndex(r => r.startsWith(username));
+            if(starIndex >= 0) {
+                starRecords[starIndex] = `${username}:0`;
+                await giteeRequest('star.txt', 'PUT', starRecords.join('\n'));
+            }
+
+            showNotification('用户积分已清零');
         }
     </script>
 </body>
