@@ -4,68 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>积分系统</title>
-    <!-- 引入 Material Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         :root {
-            --primary: #7c4dff;
-            --secondary: #26a69a;
-            --background: #f5f5f5;
+            --primary: #2196F3;
+            --success: #4CAF50;
+            --background: #f8f9fa;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            background: var(--background);
-            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
-            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        .card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            padding: 32px;
-            width: 90%;
-            max-width: 400px;
-            transform: translateY(0);
-            transition: transform 0.3s ease;
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .card:hover {
-            transform: translateY(-4px);
+        .auth-switch {
+            display: flex;
+            margin-bottom: 2rem;
+            position: relative;
         }
 
-        .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
+        .auth-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            color: #666;
+            position: relative;
+        }
+
+        .auth-tab.active {
+            color: var(--primary);
+        }
+
+        .auth-tab::after {
+            content: '';
+            position: absolute;
             bottom: 0;
-            background: rgba(255,255,255,0.9);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: var(--primary);
+            transition: 0.3s;
         }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--primary);
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .auth-tab.active::after {
+            width: 100%;
+            left: 0;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .input-group {
-            margin-bottom: 24px;
+        .form-group {
+            margin-bottom: 1.5rem;
             position: relative;
         }
 
@@ -75,336 +82,241 @@
             border: 2px solid #eee;
             border-radius: 8px;
             font-size: 16px;
-            transition: border-color 0.3s ease;
+            transition: 0.3s;
         }
 
         input:focus {
-            outline: none;
             border-color: var(--primary);
+            outline: none;
         }
 
-        .btn {
-            background: var(--primary);
-            color: white;
-            padding: 12px 24px;
+        button {
+            width: 100%;
+            padding: 12px;
             border: none;
             border-radius: 8px;
+            background: var(--primary);
+            color: white;
             font-size: 16px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            transition: 0.3s;
         }
 
-        .btn:hover {
-            opacity: 0.9;
+        button:hover {
+            filter: brightness(1.1);
             transform: translateY(-2px);
         }
 
-        .leaderboard {
-            margin-top: 24px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .user-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .hidden {
+        .dashboard {
             display: none;
         }
 
-        .points-display {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--primary);
+        .points {
+            font-size: 3rem;
             text-align: center;
-            margin: 24px 0;
+            margin: 2rem 0;
+            color: var(--primary);
         }
 
-        .badge {
-            background: var(--secondary);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 14px;
+        .checkin-btn {
+            background: var(--success);
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .notification.show {
+            transform: translateX(0);
         }
     </style>
 </head>
 <body>
-    <!-- 加载动画 -->
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
-    </div>
-
-    <!-- 登录界面 -->
-    <div class="card" id="loginContainer">
-        <h2 style="text-align: center; margin-bottom: 32px;">欢迎登录</h2>
-        <div class="input-group">
-            <input type="text" id="loginUsername" placeholder="请输入用户名">
-        </div>
-        <div class="input-group">
-            <input type="password" id="loginPassword" placeholder="请输入密码">
-        </div>
-        <button class="btn" onclick="login()">
-            <span class="material-icons">login</span>
-            立即登录
-        </button>
-        <p style="text-align: center; margin-top: 16px;">
-            没有账号？<a href="#" onclick="showRegister()" style="color: var(--primary);">立即注册</a>
-        </p>
-    </div>
-
-    <!-- 注册界面 -->
-    <div class="card hidden" id="registerContainer">
-        <h2 style="text-align: center; margin-bottom: 32px;">用户注册</h2>
-        <div class="input-group">
-            <input type="text" id="registerUsername" placeholder="设置用户名">
-        </div>
-        <div class="input-group">
-            <input type="password" id="registerPassword" placeholder="设置密码">
-        </div>
-        <button class="btn" onclick="register()">
-            <span class="material-icons">person_add</span>
-            立即注册
-        </button>
-        <p style="text-align: center; margin-top: 16px;">
-            已有账号？<a href="#" onclick="showLogin()" style="color: var(--primary);">返回登录</a>
-        </p>
-    </div>
-
-    <!-- 首页界面 -->
-    <div class="card hidden" id="homeContainer">
-        <div style="text-align: center;">
-            <h2>我的积分</h2>
-            <div class="points-display">
-                <span id="points">0</span>
-                <div class="badge">当前排名</div>
-            </div>
+    <!-- 登录/注册界面 -->
+    <div class="container auth-container">
+        <div class="auth-switch">
+            <div class="auth-tab active" onclick="switchTab('login')">登录</div>
+            <div class="auth-tab" onclick="switchTab('register')">注册</div>
         </div>
         
-        <button class="btn" onclick="signIn()" style="width: 100%;">
-            <span class="material-icons">event_available</span>
-            每日签到
-        </button>
-
-        <div style="margin-top: 32px;">
-            <h3 style="margin-bottom: 16px;">积分排行榜</h3>
-            <div class="leaderboard" id="leaderboard">
-                <!-- 骨架屏加载效果 -->
-                <div class="user-item" style="background: transparent">
-                    <div style="width: 60%; height: 20px; background: #eee; border-radius: 4px;"></div>
-                    <div style="width: 30%; height: 20px; background: #eee; border-radius: 4px;"></div>
+        <div class="auth-form">
+            <!-- 登录表单 -->
+            <div class="login-form">
+                <div class="form-group">
+                    <input type="text" id="loginUser" placeholder="用户名">
                 </div>
+                <div class="form-group">
+                    <input type="password" id="loginPass" placeholder="密码">
+                </div>
+                <button onclick="login()">登录</button>
+            </div>
+
+            <!-- 注册表单 -->
+            <div class="register-form" style="display: none;">
+                <div class="form-group">
+                    <input type="text" id="registerUser" placeholder="用户名">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPass" placeholder="密码">
+                </div>
+                <button onclick="register()">注册</button>
             </div>
         </div>
     </div>
 
+    <!-- 首页 -->
+    <div class="container dashboard">
+        <h1>欢迎, <span id="username"></span>!</h1>
+        <div class="points">
+            <span id="points">0</span> 积分
+        </div>
+        <button class="checkin-btn" onclick="checkIn()">每日签到</button>
+        <h3 style="margin: 2rem 0 1rem;">积分排行榜</h3>
+        <div id="leaderboard"></div>
+    </div>
+
+    <!-- 通知 -->
+    <div class="notification" id="notification"></div>
+
     <script>
-        const giteeRepo = '8004';
-        const giteeToken = '247bbba741389d3b55d3d126e0a249f9';
-        const giteeUser = 'damian2021';
-
-        // 显示加载动画
-        function showLoading() {
-            document.getElementById('loading').style.display = 'flex';
+        const GITEE = {
+            repo: '8004',
+            token: '247bbba741389d3b55d3d126e0a249f9',
+            owner: 'damian2021'
         }
 
-        // 隐藏加载动画
-        function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
-        }
+        let currentUser = null;
 
-        // 切换界面
-        function showRegister() {
-            document.getElementById('loginContainer').classList.add('hidden');
-            document.getElementById('registerContainer').classList.remove('hidden');
-        }
-
-        function showLogin() {
-            document.getElementById('registerContainer').classList.add('hidden');
-            document.getElementById('loginContainer').classList.remove('hidden');
-        }
-
-        function showHome() {
-            document.getElementById('loginContainer').classList.add('hidden');
-            document.getElementById('registerContainer').classList.add('hidden');
-            document.getElementById('homeContainer').classList.remove('hidden');
-        }
-
-        // 登录逻辑
-        async function login() {
-            showLoading();
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-
-            try {
-                const response = await fetch(`https://gitee.com/api/v5/repos/${giteeUser}/${giteeRepo}/contents/login.txt`, {
-                    headers: { 'Authorization': `token ${giteeToken}` }
-                });
-                const data = await response.json();
-                const users = atob(data.content).split('\n');
-                const user = users.find(u => u.split(':')[0] === username && u.split(':')[1] === password);
-
-                if (user) {
-                    showHome();
-                    loadPoints();
-                    loadLeaderboard();
-                } else {
-                    alert('用户名或密码错误');
-                }
-            } catch (error) {
-                alert('网络错误');
-            } finally {
-                hideLoading();
+        // 切换登录/注册表单
+        function switchTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll(`.${tab}-form`).forEach(f => f.style.display = 'block');
+            document.querySelectorAll(`.auth-tab[onclick*="${tab}"]`).forEach(t => t.classList.add('active'));
+            
+            if(tab === 'login') {
+                document.querySelector('.register-form').style.display = 'none';
+            } else {
+                document.querySelector('.login-form').style.display = 'none';
             }
         }
 
-        // 注册逻辑
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => notification.classList.remove('show'), 3000);
+        }
+
+        // Gitee API 请求
+        async function giteeRequest(file, method = 'GET', content = '') {
+            const url = `https://gitee.com/api/v5/repos/${GITEE.owner}/${GITEE.repo}/contents/${file}`;
+            
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `token ${GITEE.token}`
+                }
+            }
+
+            if(method === 'PUT') {
+                options.body = JSON.stringify({
+                    content: btoa(content),
+                    message: 'Update data'
+                })
+            }
+
+            const response = await fetch(url, options);
+            return response.json();
+        }
+
+        // 用户注册
         async function register() {
-            showLoading();
-            const username = document.getElementById('registerUsername').value;
-            const password = document.getElementById('registerPassword').value;
+            const user = document.getElementById('registerUser').value;
+            const pass = document.getElementById('registerPass').value;
 
-            try {
-                const response = await fetch(`https://gitee.com/api/v5/repos/${giteeUser}/${giteeRepo}/contents/login.txt`, {
-                    headers: { 'Authorization': `token ${giteeToken}` }
-                });
-                const data = await response.json();
-                const users = atob(data.content).split('\n');
-                const userExists = users.some(u => u.split(':')[0] === username);
+            const data = await giteeRequest('login.txt');
+            const users = data.content ? atob(data.content).split('\n') : [];
 
-                if (userExists) {
-                    alert('用户名已存在');
-                } else {
-                    const newUser = `${username}:${password}`;
-                    const newContent = btoa(users.concat(newUser).join('\n'));
-                    const updateResponse = await fetch(`https://gitee.com/api/v5/repos/${giteeUser}/${giteeRepo}/contents/login.txt`, {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': `token ${giteeToken}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            content: newContent,
-                            message: '添加新用户',
-                            sha: data.sha
-                        })
-                    });
+            if(users.some(u => u.split(':')[0] === user)) {
+                return showNotification('用户名已存在');
+            }
 
-                    if (updateResponse.ok) {
-                        alert('注册成功');
-                        showLogin();
-                    } else {
-                        alert('注册失败');
-                    }
-                }
-            } catch (error) {
-                alert('网络错误');
-            } finally {
-                hideLoading();
+            await giteeRequest('login.txt', 'PUT', [...users, `${user}:${pass}`].join('\n'));
+            showNotification('注册成功');
+            switchTab('login');
+        }
+
+        // 用户登录
+        async function login() {
+            const user = document.getElementById('loginUser').value;
+            const pass = document.getElementById('loginPass').value;
+
+            const data = await giteeRequest('login.txt');
+            const users = data.content ? atob(data.content).split('\n') : [];
+            
+            const valid = users.some(u => {
+                const [uUser, uPass] = u.split(':');
+                return uUser === user && uPass === pass;
+            });
+
+            if(valid) {
+                currentUser = user;
+                document.querySelector('.auth-container').style.display = 'none';
+                document.querySelector('.dashboard').style.display = 'block';
+                document.getElementById('username').textContent = user;
+                loadDashboard();
+            } else {
+                showNotification('用户名或密码错误');
             }
         }
 
-        // 加载积分和排行榜
-        async function loadPoints() {
-            const response = await fetch(`https://gitee.com/api/v5/repos/${giteeUser}/${giteeRepo}/contents/qq.txt`, {
-                headers: { 'Authorization': `token ${giteeToken}` }
-            });
-            const data = await response.json();
-            const pointsData = atob(data.content).split('\n');
-            const userEntry = pointsData.find(p => p.split(':')[0] === document.getElementById('loginUsername').value);
-            if (userEntry) {
-                document.getElementById('points').textContent = userEntry.split(':')[1];
-            }
+        // 加载首页数据
+        async function loadDashboard() {
+            const data = await giteeRequest('star.txt');
+            const records = data.content ? atob(data.content).split('\n') : [];
+            
+            // 更新积分和排行榜
+            const userRecord = records.find(r => r.startsWith(currentUser)) || `${currentUser}:0`;
+            document.getElementById('points').textContent = userRecord.split(':')[1];
+
+            // 生成排行榜
+            const leaderboard = records.map(r => {
+                const [user, points] = r.split(':');
+                return { user, points: parseInt(points) };
+            }).sort((a, b) => b.points - a.points);
+
+            document.getElementById('leaderboard').innerHTML = leaderboard
+                .map(u => `<div>${u.user} - ${u.points}</div>`)
+                .join('');
         }
 
-        async function loadLeaderboard() {
-            const response = await fetch(`https://gitee.com/api/v5/repos/${giteeUser}/${giteeRepo}/contents/qq.txt`, {
-                headers: { 'Authorization': `token ${giteeToken}` }
-            });
-            const data = await response.json();
-            const pointsData = atob(data.content).split('\n');
-            const leaderboard = document.getElementById('leaderboard');
-            leaderboard.innerHTML = '';
-
-            pointsData.sort((a, b) => b.split(':')[1] - a.split(':')[1]).forEach(p => {
-                const li = document.createElement('li');
-                li.textContent = `${p.split(':')[0]}: ${p.split(':')[1]} 分`;
-                leaderboard.appendChild(li);
-            });
-        }
-
-        // 签到逻辑
-        async function signIn() {
-            showLoading();
-            const username = document.getElementById('loginUsername').value;
-            const today = new Date().toISOString().split('T')[0];
-
-            try {
-                const response = await fetch(`https://gitee.com/api/v5/repos/${giteeUser}/${giteeRepo}/contents/qq.txt`, {
-                    headers: { 'Authorization': `token ${giteeToken}` }
-                });
-                const data = await response.json();
-                const pointsData = atob(data.content).split('\n');
-                const userEntry = pointsData.find(p => p.split(':')[0] === username);
-
-                if (userEntry && userEntry.split(':')[2] === today) {
-                    alert('今日已签到，请明天再来！');
-                    return;
-                }
-
-                let newPoints = 0;
-                let updatedEntry = '';
-                if (userEntry) {
-                    newPoints = parseInt(userEntry.split(':')[1]) + 2;
-                    updatedEntry = `${username}:${newPoints}:${today}`;
-                    pointsData[pointsData.indexOf(userEntry)] = updatedEntry;
-                } else {
-                    newPoints = 2;
-                    updatedEntry = `${username}:${newPoints}:${today}`;
-                    pointsData.push(updatedEntry);
-                }
-
-                const newContent = btoa(pointsData.join('\n'));
-                const updateResponse = await fetch(`https://gitee.com/api/v5/repos/${giteeUser}/${giteeRepo}/contents/qq.txt`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${giteeToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        content: newContent,
-                        message: '更新积分',
-                        sha: data.sha
-                    })
-                });
-
-                if (updateResponse.ok) {
-                    document.getElementById('points').textContent = newPoints;
-                    loadLeaderboard();
-                } else {
-                    alert('签到失败');
-                }
-            } catch (error) {
-                alert('网络错误');
-            } finally {
-                hideLoading();
+        // 签到功能
+        async function checkIn() {
+            const data = await giteeRequest('star.txt');
+            let records = data.content ? atob(data.content).split('\n') : [];
+            
+            const index = records.findIndex(r => r.startsWith(currentUser));
+            const currentPoints = index >= 0 ? parseInt(records[index].split(':')[1]) : 0;
+            
+            if(index >= 0) {
+                records[index] = `${currentUser}:${currentPoints + 10}`;
+            } else {
+                records.push(`${currentUser}:10`);
             }
+
+            await giteeRequest('star.txt', 'PUT', records.join('\n'));
+            showNotification('签到成功 +10 积分', 'success');
+            loadDashboard();
         }
     </script>
 </body>
