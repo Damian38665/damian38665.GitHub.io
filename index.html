@@ -504,7 +504,7 @@
             const userList = document.getElementById('userList');
             userList.innerHTML = users.map(u => {
                 const [user, pass, status] = u.split(':');
-                return `<div class="user-item" onclick="loadUserDetails('${user}')">${user} - ${status || 'active'}</div>`;
+                return `<div class="user-item" onclick="loadUserDetails('${user}')">${user}</div>`;
             }).join('');
         }
 
