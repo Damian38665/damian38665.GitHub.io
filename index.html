@@ -415,13 +415,29 @@
             if(user === ADMIN_CREDENTIALS.username) {
                 return showNotification('不能注册管理员账号');
             }
-
-            const data = await giteeRequest('login.txt');
-            const users = data.content ? atob(data.content).split('\n') : [];
-
-            if(users.some(u => u.split(':')[0] === user)) {
-                return showNotification('用户名已存在');
+                       // 验证用户名
+            if(user.trim() === '') {
+                return showNotification('用户名不能为空');
             }
+
+            // 验证中文名
+            const chineseRegex = /[\u4e00-\u9fa5]/;
+            if(chineseRegex.test(user)) {
+                return showNotification('用户名不能包含中文');
+            }
+
+            // 验证密码长度
+            if(pass.length < 8) {
+                return showNotification('密码至少需要8个字符');
+             } 
+
+            try {
+                const data = await giteeRequest('login.txt');
+                const users = data.content ? atob(data.content).split('\n') : [];
+
+                if(users.some(u => u.split(':')[0] === user)) {
+                    return showNotification('用户名已存在');
+                }
 
             await giteeRequest('login.txt', 'PUT', [...users, `${user}:${pass}:active`].join('\n'));
             showNotification('注册成功');
