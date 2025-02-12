@@ -158,17 +158,67 @@
         .admin-dashboard button.danger {
             background: var(--danger);
         }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .user-list {
+            margin-top: 1rem;
+        }
+
+        .user-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .user-item:hover {
+            background: #f5f5f5;
+        }
     </style>
 </head>
 <body>
+    <!-- 加载动画 -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
     <!-- 登录/注册界面 -->
     <div class="container auth-container">
         <div class="auth-switch">
             <div class="auth-tab active" onclick="switchTab('login')">登录</div>
             <div class="auth-tab" onclick="switchTab('register')">注册</div>
         </div>
-        注意:2月12日服务器出现问题，停止注册和登录！
-        体验账号:用户名:test，密码:1234
+        
         <div class="auth-form">
             <!-- 登录表单 -->
             <div class="login-form">
@@ -209,9 +259,9 @@
     <div class="container admin-dashboard" style="display: none;">
         <h1>后台管理</h1>
         <div class="form-group">
-            <input type="text" id="searchUser" placeholder="搜索用户名">
-            <button onclick="searchUser()">搜索</button>
+            <input type="text" id="searchUser" placeholder="搜索用户名" oninput="searchUser()">
         </div>
+        <div class="user-list" id="userList"></div>
         <div id="userDetails" style="display: none;">
             <h2>用户信息</h2>
             <div class="form-group">
@@ -259,6 +309,11 @@
         let currentUser = null;
         let lastCheckinDate = null;
 
+        // 显示加载动画
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('show', show);
+        }
+
         // 显示通知
         function showNotification(message, type = 'info') {
             const notification = document.getElementById('notification');
@@ -269,25 +324,34 @@
 
         // Gitee API 请求
         async function giteeRequest(file, method = 'GET', content = '') {
-            const url = `https://gitee.com/api/v5/repos/${GITEE.owner}/${GITEE.repo}/contents/${file}`;
-            
-            const options = {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `token ${GITEE.token}`
+            try {
+                showLoading(true);
+                const url = `https://gitee.com/api/v5/repos/${GITEE.owner}/${GITEE.repo}/contents/${file}`;
+                
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `token ${GITEE.token}`
+                    }
                 }
-            }
 
-            if(method === 'PUT') {
-                options.body = JSON.stringify({
-                    content: btoa(content),
-                    message: 'Update data'
-                })
-            }
+                if(method === 'PUT') {
+                    options.body = JSON.stringify({
+                        content: btoa(content),
+                        message: 'Update data'
+                    })
+                }
 
-            const response = await fetch(url, options);
-            return response.json();
+                const response = await fetch(url, options);
+                if (!response.ok) throw new Error('网络错误，请跟管理员联系，管理员: 何、江');
+                return response.json();
+            } catch (error) {
+                showNotification(error.message, 'danger');
+                throw error;
+            } finally {
+                showLoading(false);
+            }
         }
 
         // 切换登录/注册表单
@@ -314,6 +378,7 @@
                     currentUser = user;
                     document.querySelector('.auth-container').style.display = 'none';
                     document.querySelector('.admin-dashboard').style.display = 'block';
+                    loadUserList();
                     return;
                 } else {
                     return showNotification('管理员密码错误');
@@ -411,9 +476,20 @@
                 .join('');
         }
 
-        // 后台管理功能
-        async function searchUser() {
-            const username = document.getElementById('searchUser').value;
+        // 加载用户列表
+        async function loadUserList() {
+            const data = await giteeRequest('login.txt');
+            const users = data.content ? atob(data.content).split('\n') : [];
+            
+            const userList = document.getElementById('userList');
+            userList.innerHTML = users.map(u => {
+                const [user, pass, status] = u.split(':');
+                return `<div class="user-item" onclick="loadUserDetails('${user}')">${user} - ${status || 'active'}</div>`;
+            }).join('');
+        }
+
+        // 加载用户详情
+        async function loadUserDetails(username) {
             if(username === ADMIN_CREDENTIALS.username) {
                 return showNotification('不能修改管理员信息');
             }
@@ -439,8 +515,18 @@
             }
         }
 
+        // 搜索用户
+        async function searchUser() {
+            const query = document.getElementById('searchUser').value.toLowerCase();
+            const userItems = document.querySelectorAll('.user-item');
+            userItems.forEach(item => {
+                item.style.display = item.textContent.toLowerCase().includes(query) ? 'block' : 'none';
+            });
+        }
+
+        // 更新用户信息
         async function updateUser() {
-            const oldUsername = document.getElementById('searchUser').value;
+            const oldUsername = document.getElementById('editUsername').value;
             const newUsername = document.getElementById('editUsername').value;
             const newPassword = document.getElementById('editPassword').value;
             const newPoints = document.getElementById('editPoints').value;
@@ -511,6 +597,8 @@
 
             showNotification('用户积分已清零');
         }
+
+        // 其他辅助函数保持不变
     </script>
 </body>
 </html>
