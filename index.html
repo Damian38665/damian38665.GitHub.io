@@ -309,13 +309,13 @@
             const currentPoints = index >= 0 ? parseInt(records[index].split(':')[1]) : 0;
             
             if(index >= 0) {
-                records[index] = `${currentUser}:${currentPoints + 10}`;
+                records[index] = `${currentUser}:${currentPoints + 2}`;
             } else {
-                records.push(`${currentUser}:10`);
+                records.push(`${currentUser}:2`);
             }
 
             await giteeRequest('star.txt', 'PUT', records.join('\n'));
-            showNotification('签到成功 +10 积分', 'success');
+            showNotification('签到成功 +2 积分', 'success');
             loadDashboard();
         }
     </script>
