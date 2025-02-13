@@ -355,12 +355,12 @@ async function giteeRequest(file, method = 'GET', content = '') {
         const response = await fetch(url, options);
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`Gitee API 错误: ${errorData.message || '未知错误'}`);
+            throw new Error(`来自Damian的sever显示:API 错误: ${errorData.message || '未知错误'}`);
         }
         return response.json();
     } catch (error) {
-        console.error('Gitee API 请求失败:', error);
-        showNotification(`操作失败，请联系管理员: ${error.message}`, 'danger');
+        console.error('数据库API 请求失败:', error);
+        showNotification(`操作失败，请联系Damian开发者: ${error.message}`, 'danger');
         throw error;
     } finally {
         showLoading(false);
