@@ -323,36 +323,49 @@
         }
 
         // Gitee API 请求
-        async function giteeRequest(file, method = 'GET', content = '') {
-            try {
-                showLoading(true);
-                const url = `https://gitee.com/api/v5/repos/${GITEE.owner}/${GITEE.repo}/contents/${file}`;
-                
-                const options = {
-                    method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `token ${GITEE.token}`
-                    }
-                }
-
-                if(method === 'PUT') {
-                    options.body = JSON.stringify({
-                        content: btoa(content),
-                        message: 'Update data'
-                    })
-                }
-
-                const response = await fetch(url, options);
-                if (!response.ok) throw new Error('网络错误，请跟管理员联系，管理员: 何、江');
-                return response.json();
-            } catch (error) {
-                showNotification(error.message, 'danger');
-                throw error;
-            } finally {
-                showLoading(false);
+        // Gitee API 请求
+async function giteeRequest(file, method = 'GET', content = '') {
+    try {
+        showLoading(true);
+        const url = `https://gitee.com/api/v5/repos/${GITEE.owner}/${GITEE.repo}/contents/${file}`;
+        
+        const options = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `token ${GITEE.token}`
             }
+        };
+
+        if (method === 'PUT') {
+            // 获取文件的 SHA（用于更新文件）
+            const existingFile = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${GITEE.token}`
+                }
+            }).then(res => res.json());
+
+            options.body = JSON.stringify({
+                content: btoa(unescape(encodeURIComponent(content))), // Base64 编码
+                message: 'Update data',
+                sha: existingFile.sha // 提供文件的 SHA
+            });
         }
+
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Gitee API 错误: ${errorData.message || '未知错误'}`);
+        }
+        return response.json();
+    } catch (error) {
+        console.error('Gitee API 请求失败:', error);
+        showNotification(`操作失败，请联系管理员: ${error.message}`, 'danger');
+        throw error;
+    } finally {
+        showLoading(false);
+    }
+}
 
         // 切换登录/注册表单
         function switchTab(tab) {
