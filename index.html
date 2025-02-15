@@ -276,7 +276,7 @@
             <span id="points">0</span> 积分
         </div>
         <button class="checkin-btn" onclick="checkIn()">每日签到</button>
-        <button class="store-btn" onclick="location.href='starstore.html'">积分商城</button>
+        <button class="store-btn" onclick="goToStore()">积分商城</button>
         <h3 style="margin: 2rem 0 1rem;">积分排行榜</h3>
         <div id="leaderboard"></div>
     </div>
@@ -398,11 +398,11 @@
                 const response = await fetch(url, options);
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(`来自Damian的sever显示:API错误: ${errorData.message || '未知错误'}`);
+                    throw new Error(`Gitee API错误: ${errorData.message || '未知错误'}`);
                 }
                 return response.json();
             } catch (error) {
-                console.error('来自Damian的sever显示:API请求失败:', error);
+                console.error('API请求失败:', error);
                 showNotification(error.message.includes('404') ? '文件不存在，正在自动创建...' : error.message);
                 throw error;
             } finally {
@@ -737,6 +737,16 @@
             
             showNotification('订单处理完成');
             loadOrders();
+        }
+
+        // 跳转积分商城
+        function goToStore() {
+            if (!currentUser) {
+                showNotification('请先登录');
+                return;
+            }
+            localStorage.setItem('currentUser', currentUser); // 保存登录状态
+            location.href = 'starstore.html';
         }
     </script>
 </body>
