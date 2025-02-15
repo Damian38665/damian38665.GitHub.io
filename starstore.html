@@ -42,6 +42,7 @@
             display: flex;
             justify-content: center;
             padding: 20px;
+            font-family: 'Microsoft YaHei', sans-serif;
         }
         .container {
             background: white;
@@ -102,18 +103,15 @@
         }
 
         // Gitee API 请求
-        async function giteeRequest(file, method = 'GET', content = '') {
+        async function giteeRequest(file, method = 'GET', content = '', sha = '') {
             try {
                 showLoading(true);
                 const url = `https://gitee.com/api/v5/repos/${GITEE.owner}/${GITEE.repo}/contents/${file}`;
-                let sha = '';
-
-                // 获取文件SHA（用于更新）
-                if (method === 'PUT') {
+                
+                // 自动获取SHA（如果未提供）
+                if (method === 'PUT' && !sha) {
                     try {
-                        const res = await fetch(url, {
-                            headers: { 'Authorization': `token ${GITEE.token}` }
-                        });
+                        const res = await fetch(url, { headers: { 'Authorization': `token ${GITEE.token}` } });
                         const data = await res.json();
                         sha = data.sha;
                     } catch (e) {
@@ -137,13 +135,12 @@
                 const response = await fetch(url, options);
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(`Gitee API错误: ${errorData.message || '未知错误'}`);
+                    throw new Error(errorData.message || '未知错误');
                 }
                 return response.json();
             } catch (error) {
                 console.error('API请求失败:', error);
-                alert('数据加载失败，请稍后重试');
-                throw error;
+                throw new Error(`操作失败：${error.message}`);
             } finally {
                 showLoading(false);
             }
@@ -153,7 +150,8 @@
         async function loadStore() {
             try {
                 const data = await giteeRequest('store.txt');
-                const content = data.content ? atob(data.content) : '';
+                // 修复中文解码问题
+                const content = data.content ? decodeURIComponent(escape(atob(data.content))) : '';
                 const items = content.split('\n').filter(Boolean);
                 
                 document.getElementById('storeItems').innerHTML = items.map(item => {
@@ -161,88 +159,4 @@
                     return `
                     <div class="item">
                         <div>
-                            <h3>${name}</h3>
-                            <p>需要积分：${points}</p>
-                        </div>
-                        <button onclick="purchase('${name}', ${points})">立即兑换</button>
-                    </div>
-                    `;
-                }).join('');
-            } catch (error) {
-                console.error('加载商品失败:', error);
-            }
-        }
-
-        // 兑换商品
-        async function purchase(itemName, points) {
-            try {
-                const currentUser = localStorage.getItem('currentUser');
-                if (!currentUser) {
-                    alert('请先登录！');
-                    location.href = 'index.html';
-                    return;
-                }
-
-                const orderData = await giteeRequest('store_orders.txt');
-                const existingOrders = orderData.content ? atob(orderData.content).split('\n').filter(Boolean) : [];
-                
-                // 检查是否重复提交
-                if (existingOrders.some(o => o.startsWith(`${currentUser}:${itemName}:`))) {
-                    alert('您已提交过该商品的兑换申请！');
-                    return;
-                }
-
-                // 更新订单
-                const newOrders = [...existingOrders, `${currentUser}:${itemName}:${points}:pending`];
-                await giteeRequest('store_orders.txt', 'PUT', newOrders.join('\n'));
-                
-                alert('兑换申请已提交，等待管理员审核！');
-                loadMyOrders();
-            } catch (error) {
-                console.error('兑换失败:', error);
-                alert('兑换失败，请稍后重试');
-            }
-        }
-
-        // 加载我的订单
-        async function loadMyOrders() {
-            try {
-                const currentUser = localStorage.getItem('currentUser');
-                const data = await giteeRequest('store_orders.txt');
-                const content = data.content ? atob(data.content) : '';
-                const orders = content.split('\n').filter(Boolean);
-                
-                document.getElementById('myOrders').innerHTML = orders
-                    .filter(o => o.startsWith(currentUser + ':'))
-                    .map(o => {
-                        const [user, item, points, status] = o.split(':');
-                        return `
-                        <div class="item">
-                            <div>
-                                <h3>${item}</h3>
-                                <p>积分：${points} | 状态：${status === 'pending' ? '待处理' : '已完成'}</p>
-                            </div>
-                        </div>
-                        `;
-                    }).join('');
-            } catch (error) {
-                console.error('加载订单失败:', error);
-            }
-        }
-
-        // 初始化
-        (async () => {
-            // 检查登录状态
-            if (!localStorage.getItem('currentUser')) {
-                alert('请先登录！');
-                location.href = 'index.html';
-                return;
-            }
-            
-            // 加载数据
-            await loadStore();
-            await loadMyOrders();
-        })();
-    </script>
-</body>
-</html>
+   
