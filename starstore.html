@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>积分商城</title>
+    <style>
+        body {
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+        .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>积分商城</h1>
+        <div id="storeItems"></div>
+        <h2>我的订单</h2>
+        <div id="myOrders"></div>
+    </div>
+
+    <script>
+        const GITEE = {
+            repo: '8004',
+            token: 'b5a96c2df3774e1a8ded0ff0cc54cdfa',
+            owner: 'damian2021'
+        };
+
+        let currentUser = localStorage.getItem('currentUser');
+
+        // 检查登录状态
+        if(!currentUser) {
+            alert('请先登录！');
+            location.href = 'index.html';
+        }
+
+        // 加载商品
+        async function loadStore() {
+            const data = await giteeRequest('store.txt');
+            const items = data.content ? atob(data.content).split('\n').filter(Boolean) : [];
+            
+            document.getElementById('storeItems').innerHTML = items.map(item => {
+                const [name, points] = item.split(':');
+                return `
+                <div class="item">
+                    <div>
+                        <h3>${name}</h3>
+                        <p>需要积分：${points}</p>
+                    </div>
+                    <button onclick="purchase('${name}', ${points})">立即兑换</button>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // 兑换商品
+        async function purchase(itemName, points) {
+            // 记录订单
+            const orderData = await giteeRequest('store_orders.txt');
+            const orders = orderData.content ? atob(orderData.content).split('\n').filter(Boolean) : [];
+            
+            orders.push(`${currentUser}:${itemName}:${points}:pending`);
+            await giteeRequest('store_orders.txt', 'PUT', orders.join('\n'));
+            
+            alert('兑换申请已提交，等待管理员审核！');
+            loadMyOrders();
+        }
+
+        // 加载我的订单
+        async function loadMyOrders() {
+            const data = await giteeRequest('store_orders.txt');
+            const orders = data.content ? atob(data.content).split('\n').filter(Boolean) : [];
+            
+            document.getElementById('myOrders').innerHTML = orders
+                .filter(o => o.startsWith(currentUser))
+                .map(o => {
+                    const [user, item, points, status] = o.split(':');
+                    return `<div>${item} - ${points}积分 (状态：${status})</div>`;
+                }).join('');
+        }
+
+        // 初始化
+        loadStore();
+        loadMyOrders();
+    </script>
+</body>
+</html>
