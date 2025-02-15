@@ -42,10 +42,9 @@
             owner: 'damian2021'
         };
 
-        let currentUser = localStorage.getItem('currentUser');
-
         // 检查登录状态
-        if(!currentUser) {
+        const currentUser = localStorage.getItem('currentUser');
+        if (!currentUser) {
             alert('请先登录！');
             location.href = 'index.html';
         }
