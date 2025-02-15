@@ -13,16 +13,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
-
         .loading.show {
             display: flex;
         }
-
         .loading-spinner {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #2196F3;
@@ -31,12 +29,12 @@
             height: 40px;
             animation: spin 1s linear infinite;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
+        /* 商品列表样式 */
         body {
             background: #f0f2f5;
             display: flex;
@@ -57,6 +55,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 1rem;
+            margin: 0.5rem 0;
             border-bottom: 1px solid #eee;
             transition: 0.3s;
         }
@@ -84,9 +83,9 @@
     </div>
 
     <div class="container">
-        <h1>积分商城</h1>
-        <div id="storeItems"></div>
-        <h2 style="margin-top: 2rem;">我的订单</h2>
+        <h1>📦 积分商城</h1>
+        <div id="storeItems" class="store-items"></div>
+        <h2 style="margin-top: 2rem;">📋 我的订单</h2>
         <div id="myOrders"></div>
     </div>
 
@@ -97,18 +96,19 @@
             owner: 'damian2021'
         };
 
-        // 显示加载动画
+        // 显示/隐藏加载动画
         function showLoading(show) {
-            document.getElementById('loading').classList.toggle('show', show);
+            const loader = document.getElementById('loading');
+            show ? loader.classList.add('show') : loader.classList.remove('show');
         }
 
-        // Gitee API 请求
+        // API请求封装
         async function giteeRequest(file, method = 'GET', content = '', sha = '') {
             try {
                 showLoading(true);
                 const url = `https://gitee.com/api/v5/repos/${GITEE.owner}/${GITEE.repo}/contents/${file}`;
                 
-                // 自动获取SHA（如果未提供）
+                // 自动获取SHA（用于更新操作）
                 if (method === 'PUT' && !sha) {
                     try {
                         const res = await fetch(url, { headers: { 'Authorization': `token ${GITEE.token}` } });
@@ -135,7 +135,7 @@
                 const response = await fetch(url, options);
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.message || '未知错误');
+                    throw new Error(errorData.message || '请求失败');
                 }
                 return response.json();
             } catch (error) {
@@ -146,17 +146,114 @@
             }
         }
 
-        // 加载商品
+        // 加载商品列表
         async function loadStore() {
             try {
                 const data = await giteeRequest('store.txt');
-                // 修复中文解码问题
                 const content = data.content ? decodeURIComponent(escape(atob(data.content))) : '';
-                const items = content.split('\n').filter(Boolean);
+                const items = content.split('\n').filter(line => line.trim() !== '');
                 
-                document.getElementById('storeItems').innerHTML = items.map(item => {
+                if (items.length === 0) {
+                    document.getElementById('storeItems').innerHTML = '<p class="empty">暂无商品</p>';
+                    return;
+                }
+
+                document.getElementById('storeItems').innerHTML = items.map((item, index) => {
                     const [name, points] = item.split(':');
                     return `
+                    <div class="item" data-index="${index}">
+                        <div class="item-info">
+                            <h3>${name}</h3>
+                            <p>所需积分：<span class="points">${points}</span></p>
+                        </div>
+                        <button onclick="purchase('${encodeURIComponent(name)}', ${points})">立即兑换</button>
+                    </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('加载商品失败:', error);
+                document.getElementById('storeItems').innerHTML = `
+                    <p class="error">⚠️ 商品加载失败，请<a href="javascript:location.reload()">刷新页面</a></p>
+                `;
+            }
+        }
+
+        // 兑换商品
+        async function purchase(encodedName, points) {
+            try {
+                const currentUser = localStorage.getItem('currentUser');
+                if (!currentUser) {
+                    alert('请先登录！');
+                    return location.href = 'index.html';
+                }
+
+                const itemName = decodeURIComponent(encodedName);
+                const orderData = await giteeRequest('store_orders.txt');
+                const existingContent = orderData.content ? decodeURIComponent(escape(atob(orderData.content))) : '';
+                const existingOrders = existingContent.split('\n').filter(line => line.trim() !== '');
+                
+                // 检查重复兑换
+                if (existingOrders.some(order => {
+                    const [user, name] = order.split(':');
+                    return user === currentUser && name === itemName;
+                })) {
+                    return alert('⏳ 您已提交过该商品的兑换申请！');
+                }
+
+                // 提交新订单
+                const newOrders = [...existingOrders, `${currentUser}:${itemName}:${points}:pending`];
+                await giteeRequest(
+                    'store_orders.txt',
+                    'PUT',
+                    unescape(encodeURIComponent(newOrders.join('\n'))),
+                    orderData.sha
+                );
+                
+                alert('✅ 兑换申请已提交，等待管理员审核！');
+                await loadMyOrders();
+            } catch (error) {
+                console.error('兑换失败:', error);
+                alert(`❌ 兑换失败：${error.message}`);
+            }
+        }
+
+        // 加载订单记录
+        async function loadMyOrders() {
+            try {
+                const currentUser = localStorage.getItem('currentUser');
+                const data = await giteeRequest('store_orders.txt');
+                const content = data.content ? decodeURIComponent(escape(atob(data.content))) : '';
+                const orders = content.split('\n').filter(line => line.trim() !== '');
+                
+                const userOrders = orders.filter(order => order.startsWith(`${currentUser}:`));
+                document.getElementById('myOrders').innerHTML = userOrders.map(order => {
+                    const [_, item, points, status] = order.split(':');
+                    return `
                     <div class="item">
-                        <div>
-   
+                        <div class="item-info">
+                            <h3>${item}</h3>
+                            <p>积分：${points} | 状态：<span class="status ${status}">${
+                                status === 'pending' ? '待处理' : '已完成'
+                            }</span></p>
+                        </div>
+                    </div>
+                    `;
+                }).join('') || '<p class="empty">暂无订单记录</p>';
+            } catch (error) {
+                console.error('加载订单失败:', error);
+                document.getElementById('myOrders').innerHTML = '<p class="error">⚠️ 订单加载失败</p>';
+            }
+        }
+
+        // 初始化
+        (async () => {
+            if (!localStorage.getItem('currentUser')) {
+                alert('🔒 请先登录系统');
+                return location.href = 'index.html';
+            }
+            await loadStore();
+            await loadMyOrders();
+        })();
+    </script>
+</body>
+</html>
