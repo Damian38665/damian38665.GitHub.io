@@ -9,6 +9,7 @@
             --primary: #2196F3;
             --success: #4CAF50;
             --danger: #f44336;
+            --warning: #FF9800;
             --background: #f8f9fa;
         }
 
@@ -103,6 +104,7 @@
             font-size: 16px;
             cursor: pointer;
             transition: 0.3s;
+            margin: 0.5rem 0;
         }
 
         button:hover {
@@ -125,6 +127,14 @@
             background: var(--success);
         }
 
+        .store-btn {
+            background: var(--warning);
+        }
+
+        .danger {
+            background: var(--danger);
+        }
+
         .notification {
             position: fixed;
             bottom: 20px;
@@ -139,24 +149,6 @@
 
         .notification.show {
             transform: translateX(0);
-        }
-
-        .admin-dashboard .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .admin-dashboard label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #666;
-        }
-
-        .admin-dashboard button {
-            margin: 0.5rem 0;
-        }
-
-        .admin-dashboard button.danger {
-            background: var(--danger);
         }
 
         .loading {
@@ -204,6 +196,39 @@
         .user-item:hover {
             background: #f5f5f5;
         }
+
+        .admin-dashboard .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .admin-dashboard label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        .admin-dashboard input {
+            margin-bottom: 1rem;
+        }
+
+        .admin-dashboard button {
+            margin: 0.5rem 0;
+        }
+
+        .order-item {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 1rem;
+        }
+
+        .order-item span {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .order-item button {
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -223,7 +248,6 @@
             <!-- 登录表单 -->
             <div class="login-form">
                 <div class="form-group">
-                    [系统]:欢迎👏登录，积分商城即将上架！
                     <input type="text" id="loginUser" placeholder="用户名">
                 </div>
                 <div class="form-group">
@@ -235,7 +259,6 @@
             <!-- 注册表单 -->
             <div class="register-form" style="display: none;">
                 <div class="form-group">
-                    [Damian超级管理员Lv.3]:最近服务器频繁受到攻击，注册会被限制，如果无法注册请刷新页面📃。
                     <input type="text" id="registerUser" placeholder="用户名">
                 </div>
                 <div class="form-group">
@@ -248,11 +271,12 @@
 
     <!-- 首页 -->
     <div class="container dashboard">
-        <h1>欢迎, <span id="username"></span>!  20积分=1元</h1>
+        <h1>欢迎, <span id="username"></span>!</h1>
         <div class="points">
             <span id="points">0</span> 积分
         </div>
-        <button class="checkin-btn" onclick="checkIn()" id="checkinBtn">每日签到</button>
+        <button class="checkin-btn" onclick="checkIn()">每日签到</button>
+        <button class="store-btn" onclick="location.href='starstore.html'">积分商城</button>
         <h3 style="margin: 2rem 0 1rem;">积分排行榜</h3>
         <div id="leaderboard"></div>
     </div>
@@ -291,6 +315,20 @@
                 <button onclick="clearPoints()">清除积分</button>
             </div>
         </div>
+
+        <!-- 新增商品管理 -->
+        <div class="form-group">
+            <h2>商品管理</h2>
+            <input type="text" id="itemName" placeholder="商品名称">
+            <input type="number" id="itemPoints" placeholder="所需积分">
+            <button onclick="addItem()">添加商品</button>
+        </div>
+
+        <!-- 新增订单管理 -->
+        <div id="orders">
+            <h2>待处理订单</h2>
+            <div id="orderList"></div>
+        </div>
     </div>
 
     <!-- 通知 -->
@@ -301,12 +339,12 @@
             repo: '8004',
             token: 'b5a96c2df3774e1a8ded0ff0cc54cdfa',
             owner: 'damian2021'
-        }
+        };
 
         const ADMIN_CREDENTIALS = {
             username: 'admin',
             password: 'Aa814814123456'
-        }
+        };
 
         let currentUser = null;
         let lastCheckinDate = null;
@@ -325,49 +363,52 @@
         }
 
         // Gitee API 请求
-        // Gitee API 请求
-async function giteeRequest(file, method = 'GET', content = '') {
-    try {
-        showLoading(true);
-        const url = `https://gitee.com/api/v5/repos/${GITEE.owner}/${GITEE.repo}/contents/${file}`;
-        
-        const options = {
-            method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `token ${GITEE.token}`
-            }
-        };
+        async function giteeRequest(file, method = 'GET', content = '') {
+            try {
+                showLoading(true);
+                const url = `https://gitee.com/api/v5/repos/${GITEE.owner}/${GITEE.repo}/contents/${file}`;
+                let sha = '';
 
-        if (method === 'PUT') {
-            // 获取文件的 SHA（用于更新文件）
-            const existingFile = await fetch(url, {
-                headers: {
-                    'Authorization': `token ${GITEE.token}`
+                // 获取文件SHA（用于更新）
+                if (method === 'PUT') {
+                    try {
+                        const res = await fetch(url, {
+                            headers: { 'Authorization': `token ${GITEE.token}` }
+                        });
+                        const data = await res.json();
+                        sha = data.sha;
+                    } catch (e) {
+                        if (!e.message.includes('404')) throw e;
+                    }
                 }
-            }).then(res => res.json());
 
-            options.body = JSON.stringify({
-                content: btoa(unescape(encodeURIComponent(content))), // Base64 编码
-                message: 'Update data',
-                sha: existingFile.sha // 提供文件的 SHA
-            });
-        }
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `token ${GITEE.token}`
+                    },
+                    body: method === 'PUT' ? JSON.stringify({
+                        content: btoa(unescape(encodeURIComponent(content))),
+                        message: '系统自动更新',
+                        sha: sha || undefined
+                    }) : null
+                };
 
-        const response = await fetch(url, options);
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`来自Damian的sever显示:API 错误: ${errorData.message || '未知错误'}`);
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`来自Damian的sever显示:API错误: ${errorData.message || '未知错误'}`);
+                }
+                return response.json();
+            } catch (error) {
+                console.error('来自Damian的sever显示:API请求失败:', error);
+                showNotification(error.message.includes('404') ? '文件不存在，正在自动创建...' : error.message);
+                throw error;
+            } finally {
+                showLoading(false);
+            }
         }
-        return response.json();
-    } catch (error) {
-        console.error('数据库API 请求失败:', error);
-        showNotification(`操作失败，请联系Damian开发者: ${error.message}`, 'danger');
-        throw error;
-    } finally {
-        showLoading(false);
-    }
-}
 
         // 切换登录/注册表单
         function switchTab(tab) {
@@ -394,6 +435,7 @@ async function giteeRequest(file, method = 'GET', content = '') {
                     document.querySelector('.auth-container').style.display = 'none';
                     document.querySelector('.admin-dashboard').style.display = 'block';
                     loadUserList();
+                    loadOrders();
                     return;
                 } else {
                     return showNotification('管理员密码错误');
@@ -518,7 +560,7 @@ async function giteeRequest(file, method = 'GET', content = '') {
             
             const userList = document.getElementById('userList');
             userList.innerHTML = users.map(u => {
-                const [user, pass, status] = u.split(':');
+                const [user] = u.split(':');
                 return `<div class="user-item" onclick="loadUserDetails('${user}')">${user}</div>`;
             }).join('');
         }
@@ -636,6 +678,65 @@ async function giteeRequest(file, method = 'GET', content = '') {
 
             showNotification('用户积分已清零');
             loadUserDetails(username);
+        }
+
+        // 新增商品管理功能
+        async function addItem() {
+            const name = document.getElementById('itemName').value;
+            const points = document.getElementById('itemPoints').value;
+            
+            const data = await giteeRequest('store.txt');
+            const items = data.content ? atob(data.content).split('\n').filter(Boolean) : [];
+            
+            items.push(`${name}:${points}`);
+            await giteeRequest('store.txt', 'PUT', items.join('\n'));
+            showNotification('商品添加成功');
+        }
+
+        // 加载订单
+        async function loadOrders() {
+            const data = await giteeRequest('store_orders.txt');
+            const orders = data.content ? atob(data.content).split('\n').filter(Boolean) : [];
+            
+            document.getElementById('orderList').innerHTML = orders.map(o => {
+                const [user, item, points, status] = o.split(':');
+                return `
+                <div class="order-item">
+                    <span>用户：${user}</span>
+                    <span>商品：${item}</span>
+                    <span>积分：${points}</span>
+                    <button ${status === 'completed' ? 'disabled' : ''} 
+                            onclick="completeOrder('${o}')">
+                        ${status === 'completed' ? '已完成' : '确认完成'}
+                    </button>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // 完成订单
+        async function completeOrder(order) {
+            // 更新订单状态
+            const orderData = await giteeRequest('store_orders.txt');
+            let orders = orderData.content ? atob(orderData.content).split('\n').filter(Boolean) : [];
+            
+            orders = orders.map(o => o === order ? order.replace('pending', 'completed') : o);
+            await giteeRequest('store_orders.txt', 'PUT', orders.join('\n'));
+            
+            // 扣除积分
+            const [user, item, points] = order.split(':');
+            const starData = await giteeRequest('star.txt');
+            let records = starData.content ? atob(starData.content).split('\n').filter(Boolean) : [];
+            
+            const userIndex = records.findIndex(r => r.startsWith(user));
+            if(userIndex >= 0) {
+                const currentPoints = parseInt(records[userIndex].split(':')[1]);
+                records[userIndex] = `${user}:${currentPoints - parseInt(points)}`;
+                await giteeRequest('star.txt', 'PUT', records.join('\n'));
+            }
+            
+            showNotification('订单处理完成');
+            loadOrders();
         }
     </script>
 </body>
