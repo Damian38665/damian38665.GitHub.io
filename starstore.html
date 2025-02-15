@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>积分商城</title>
     <style>
-        /* 新增加载动画样式 */
+        /* 加载动画样式 */
         .loading {
             display: none;
             position: fixed;
@@ -106,15 +106,39 @@
             try {
                 showLoading(true);
                 const url = `https://gitee.com/api/v5/repos/${GITEE.owner}/${GITEE.repo}/contents/${file}`;
+                let sha = '';
+
+                // 获取文件SHA（用于更新）
+                if (method === 'PUT') {
+                    try {
+                        const res = await fetch(url, {
+                            headers: { 'Authorization': `token ${GITEE.token}` }
+                        });
+                        const data = await res.json();
+                        sha = data.sha;
+                    } catch (e) {
+                        if (!e.message.includes('404')) throw e;
+                    }
+                }
+
                 const options = {
                     method,
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `token ${GITEE.token}`
-                    }
+                    },
+                    body: method === 'PUT' ? JSON.stringify({
+                        content: btoa(unescape(encodeURIComponent(content))),
+                        message: '系统自动更新',
+                        sha: sha || undefined
+                    }) : null
                 };
+
                 const response = await fetch(url, options);
-                if (!response.ok) throw new Error('请求失败');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Gitee API错误: ${errorData.message || '未知错误'}`);
+                }
                 return response.json();
             } catch (error) {
                 console.error('API请求失败:', error);
@@ -176,6 +200,7 @@
                 loadMyOrders();
             } catch (error) {
                 console.error('兑换失败:', error);
+                alert('兑换失败，请稍后重试');
             }
         }
 
