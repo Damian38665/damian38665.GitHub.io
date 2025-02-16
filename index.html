@@ -548,7 +548,7 @@
             const leaderboard = records.map(r => {
                 const [user, points] = r.split(':');
                 return { user, points: parseInt(points) };
-            }).sort((a, b) => b.points : a.points);
+            }).sort((a, b) => b.points - a.points);
 
             document.getElementById('leaderboard').innerHTML = leaderboard
                 .map(u => `<div>${u.user} - ${u.points}</div>`)
