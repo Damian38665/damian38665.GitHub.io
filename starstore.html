@@ -251,6 +251,7 @@
         (async () => {
             if (!localStorage.getItem('currentUser')) {
                 alert('🔒 请先登录系统');
+                alert('🔒 提示:暂不支持从其他功能中点击积分商城打开，请从积分系统的积分商城大按钮，点击才有效');
                 return location.href = 'index.html';
             }
             await loadStore();
