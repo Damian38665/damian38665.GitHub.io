@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极光聊天室 | Aurora Chat</title>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #4f46e5;
+            --bg-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --success-color: #10b981;
+            --error-color: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-gradient);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 600px;
+            max-width: 90%;
+            height: 80vh;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .login-box, .chat-box {
+            padding: 2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .login-box {
+            display: block;
+        }
+
+        .chat-box {
+            display: none;
+        }
+
+        /* 自定义通知 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1001;
+        }
+
+        .notification.success {
+            background: var(--success-color);
+        }
+
+        .notification.error {
+            background: var(--error-color);
+        }
+
+        @keyframes slideIn {
+            from { top: -50px; opacity: 0; }
+            to { top: 20px; opacity: 1; }
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+
+        /* 涟漪效果 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.7);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .message-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            max-height: 60vh;
+        }
+
+        .message-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            max-width: 80%;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .username {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .timestamp {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        /* 加载动画 */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        /* 美化滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d1d1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loader"></div>
+    </div>
+
+    <!-- 自定义通知 -->
+    <div class="notification" id="notification"></div>
+
+    <div class="container">
+        <!-- 登录界面 -->
+        <div class="login-box" id="loginBox">
+            <h1>欢迎回来 ✨</h1>
+            <div class="input-group">
+                <input type="text" id="username" placeholder="用户名" autocomplete="username">
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="密码" autocomplete="current-password">
+            </div>
+            <button onclick="handleLogin()">立即登录</button>
+            <div style="text-align: center; margin-top: 1rem;">
+                <a href="https://damian38665.github.io" style="color: #666; text-decoration: none;">
+                    没有账号？立即注册 →
+                </a>
+            </div>
+        </div>
+
+        <!-- 聊天界面 -->
+        <div class="chat-box" id="chatBox">
+            <h1>极光聊天室 🌌</h1>
+            <div class="message-list" id="messageList"></div>
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="输入消息..." 
+                       onkeyup="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()" style="margin-top: 12px;">发送消息</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置信息
+        const CONFIG = {
+            REPO: '8004',
+            USER: 'damian2021',
+            TOKEN: 'b5a96c2df3774e1a8ded0ff0cc54cdfa',
+            FILES: {
+                LOGIN: 'login.txt',
+                CHAT: 'room.txt'
+            },
+            API_BASE: 'https://gitee.com/api/v5/repos'
+        };
+
+        let currentUser = null;
+
+        // 显示通知
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // 显示加载动画
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        // 隐藏加载动画
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // 生成头像
+        function generateAvatar(name) {
+            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444'];
+            const initial = name.charAt(0).toUpperCase();
+            const colorIndex = name.charCodeAt(0) % colors.length;
+            return {
+                initial,
+                color: colors[colorIndex]
+            };
+        }
+
+        // 自动创建文件
+        async function ensureFileExists(filename, initialContent = '') {
+            try {
+                const url = `${CONFIG.API_BASE}/${CONFIG.USER}/${CONFIG.REPO}/contents/${filename}?access_token=${CONFIG.TOKEN}`;
+                const response = await fetch(url);
+                
+                if (response.status === 404) {
+                    const createData = {
+                        content: btoa(unescape(encodeURIComponent(initialContent))),
+                        message: `初始化 ${filename}`,
+                    };
+                    await fetch(url, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(createData)
+                    });
+                    console.log(`文件 ${filename} 已创建`);
+                }
+            } catch (error) {
+                console.error('文件初始化失败:', error);
+                throw error;
+            }
+        }
+
+        // UTF-8解码函数
+        function decodeBase64(base64) {
+            return decodeURIComponent(escape(atob(base64)));
+        }
+
+        // 登录处理
+        async function handleLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!username || !password) {
+                showNotification('请输入完整的登录信息', 'error');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                await ensureFileExists(CONFIG.FILES.LOGIN, 'admin:admin\nuser:123456');
+
+                const response = await fetch(
+                    `${CONFIG.API_BASE}/${CONFIG.USER}/${CONFIG.REPO}/contents/${CONFIG.FILES.LOGIN}?access_token=${CONFIG.TOKEN}`
+                );
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showNotification(`无法读取登录文件: ${data.message}`, 'error');
+                    return;
+                }
+
+                const fileContent = decodeBase64(data.content.replace(/\s/g, ''));
+                const credentials = fileContent
+                    .split('\n')
+                    .filter(line => line.includes(':'))
+                    .map(line => line.split(':'));
+
+                const isValid = credentials.some(([u, p]) => u === username && p === password);
+                
+                if (isValid) {
+                    currentUser = username;
+                    document.getElementById('loginBox').style.display = 'none';
+                    document.getElementById('chatBox').style.display = 'flex';
+                    loadChatHistory();
+                    setInterval(loadChatHistory, 1000);
+                    showNotification('登录成功');
+                } else {
+                    showNotification('用户名或密码错误', 'error');
+                }
+            } catch (error) {
+                console.error('登录错误:', error);
+                showNotification('登录失败，请检查网络和配置', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            showLoading();
+
+            try {
+                const fileInfo = await fetch(
+                    `${CONFIG.API_BASE}/${CONFIG.USER}/${CONFIG.REPO}/contents/${CONFIG.FILES.CHAT}?access_token=${CONFIG.TOKEN}`
+                ).then(r => r.json());
+
+                if (fileInfo.status === 404) {
+                    await ensureFileExists(CONFIG.FILES.CHAT);
+                    return sendMessage();
+                }
+
+                const history = decodeBase64(fileInfo.content).split('\n').filter(Boolean);
+                const timestamp = new Date().toLocaleString();
+                const newEntry = `${currentUser}||${timestamp}||${message}`;
+
+                const updateData = {
+                    content: btoa(unescape(encodeURIComponent([...history, newEntry].join('\n')))),
+                    message: '新聊天记录',
+                    sha: fileInfo.sha
+                };
+
+                const response = await fetch(
+                    `${CONFIG.API_BASE}/${CONFIG.USER}/${CONFIG.REPO}/contents/${CONFIG.FILES.CHAT}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${CONFIG.TOKEN}`
+                        },
+                        body: JSON.stringify(updateData)
+                    }
+                );
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || `HTTP错误 ${response.status}`);
+                }
+
+                input.value = '';
+                await loadChatHistory();
+                showNotification('消息发送成功');
+                
+            } catch (error) {
+                console.error('发送失败详情:', error);
+                showNotification(`发送失败: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // 加载聊天记录
+        async function loadChatHistory() {
+            try {
+                const response = await fetch(
+                    `${CONFIG.API_BASE}/${CONFIG.USER}/${CONFIG.REPO}/contents/${CONFIG.FILES.CHAT}?access_token=${CONFIG.TOKEN}`
+                );
+                const data = await response.json();
+                
+                const messages = decodeBase64(data.content)
+                    .split('\n')
+                    .filter(Boolean)
+                    .map(line => {
+                        const [username, timestamp, content] = line.split('||');
+                        return { username, timestamp, content };
+                    });
+
+                const messageList = document.getElementById('messageList');
+                messageList.innerHTML = messages.map(msg => `
+                    <div class="message-item">
+                        <div class="avatar" style="background: ${generateAvatar(msg.username).color}">
+                            ${generateAvatar(msg.username).initial}
+                        </div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="username">${msg.username}</span>
+                                <span class="timestamp">${msg.timestamp}</span>
+                            </div>
+                            <div>${msg.content}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                messageList.scrollTop = messageList.scrollHeight;
+            } catch (error) {
+                console.error('加载失败:', error);
+            }
+        }
+
+        // 添加涟漪效果
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function (e) {
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                const rect = button.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                ripple.style.width = ripple.style.height = `${size}px`;
+                ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+                ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+                button.appendChild(ripple);
+
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+    </script>
+</body>
+</html>
