@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>积分系统服务器监控仪表板</title>
+    <title>多服务器监控仪表板</title>
     <style>
         * {
             margin: 0;
@@ -24,6 +24,41 @@
             background: white;
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .notifications {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 1200px;
+            z-index: 1000;
+        }
+
+        .notification {
+            background: #ff4d4d;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.5s ease;
+        }
+
+        .notification button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
         }
 
         .server-grid {
@@ -152,6 +187,8 @@
     </style>
 </head>
 <body>
+    <div class="notifications" id="notifications"></div>
+
     <div class="dashboard">
         <div class="server-grid">
             <!-- 香港服务器 -->
@@ -252,6 +289,7 @@
             "服务不可用 (503 Service Unavailable)",
             "数据库连接失败",
             "内存溢出 (OutOfMemoryError)",
+            "SSL 证书过期",
             "请求超时 (408 Request Timeout)",
             "DNS 解析失败",
             "负载过高 (High Load Average)"
@@ -350,7 +388,7 @@
             trafficCharts[serverId].updateData(traffic);
 
             // 更新日志
-            if (isProblematic && Math.random() < 0.1) { 
+            if (isProblematic && Math.random() < 0.1) { // 错误日志概率降低到10%
                 const errorMsg = errorMessages[Math.floor(Math.random() * errorMessages.length)];
                 updateLog(`activity-log-${serverId}`, errorMsg, 'error');
             } else {
@@ -359,16 +397,42 @@
             }
         }
 
+        // 显示通知
+        function showNotification(message, duration = 1000) {
+            const notifications = document.getElementById('notifications');
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()">×</button>
+            `;
+            notifications.appendChild(notification);
+
+            // 自动移除通知
+            setTimeout(() => {
+                notification.remove();
+            }, duration);
+        }
+
+        // 随机显示美国服务器被攻击的通知
+        function showAttackNotification() {
+            showNotification('[系统]警告：美国服务器正在被攻击，请紧急处理！');
+            setTimeout(showAttackNotification, Math.floor(Math.random() * 10000) + 1000); // 5-15秒后再次显示
+        }
+
         // 初始化更新
         function updateAll() {
             updateServer('hk');  // 香港
-            updateServer('us', true);  // 美国
+            updateServer('us', true);  // 美国（问题服务器）
             updateServer('mo');  // 澳门
         }
 
         // 每2秒更新一次
-        setInterval(updateAll, 2000);
+        setInterval(updateAll, 1000);
         updateAll();
+
+        // 启动攻击通知
+        showAttackNotification();
     </script>
 </body>
 </html>
