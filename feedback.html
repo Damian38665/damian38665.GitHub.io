@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>积分系统客服联系</title>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #4f46e5;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --toolbar-color: rgba(255, 255, 255, 0.9);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        /* 工具栏 */
+        .toolbar {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            background: var(--toolbar-color);
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .toolbar button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toolbar button:hover {
+            opacity: 0.9;
+        }
+
+        /* 涟漪效果 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.7);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .login-box, .chat-box {
+            padding: 2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .login-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-box {
+            display: none;
+            padding-top: 60px; /* 给工具栏留出空间 */
+        }
+
+        /* 自定义通知 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1001;
+        }
+
+        @keyframes slideIn {
+            from { top: -50px; opacity: 0; }
+            to { top: 20px; opacity: 1; }
+        }
+
+        .notification.success { background: var(--success-color); }
+        .notification.error { background: var(--error-color); }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button.primary:hover {
+            opacity: 0.9;
+        }
+
+        .message-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            scroll-behavior: smooth;
+        }
+
+        .message-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 12px;
+            max-width: 70%;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .username {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .timestamp {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        /* 格式化工具栏 */
+        .format-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .format-toolbar button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .format-toolbar button:hover {
+            background: #e0e0e0;
+        }
+
+        /* 表情包面板 */
+        .emoji-panel {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 12px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .emoji-panel.open {
+            display: block;
+        }
+
+        .emoji-panel .emoji {
+            font-size: 24px;
+            cursor: pointer;
+            margin: 4px;
+        }
+
+        .emoji-panel .emoji:hover {
+            transform: scale(1.2);
+        }
+
+        /* 加载动画 */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        /* 美化滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d1d1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loader"></div>
+    </div>
+
+    <!-- 自定义通知 -->
+    <div class="notification" id="notification"></div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar" id="toolbar" style="display: none;">
+        <button onclick="window.location.href='tousu.html'">投诉反馈</button>
+        <button onclick="window.location.href='roomlishi.html'">版本历史</button>
+    </div>
+
+    <!-- 表情包面板 -->
+    <div class="emoji-panel" id="emojiPanel">
+        <div class="emoji" onclick="insertEmoji('😀')">😀</div>
+        <div class="emoji" onclick="insertEmoji('😂')">😂</div>
+        <div class="emoji" onclick="insertEmoji('😍')">😍</div>
+        <div class="emoji" onclick="insertEmoji('😎')">😎</div>
+        <div class="emoji" onclick="insertEmoji('👍')">👍</div>
+        <div class="emoji" onclick="insertEmoji('👏')">👏</div>
+        <div class="emoji" onclick="insertEmoji('🙏')">🙏</div>
+        <div class="emoji" onclick="insertEmoji('❤️')">❤️</div>
+        <div class="emoji" onclick="insertEmoji('🔥')">🔥</div>
+        <div class="emoji" onclick="insertEmoji('🎉')">🎉</div>
+    </div>
+
+    <div class="container">
+        <!-- 登录界面 -->
+        <div class="login-box" id="loginBox">
+            <h1>欢迎登录积分系统客服联系</h1>
+            <div class="input-group">
+                <input type="text" id="username" placeholder="用户名">
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="密码">
+            </div>
+            <div class="input-group">
+                <button class="primary" onclick="handleLogin()">立即登录</button>
+            </div>
+        </div>
+
+        <!-- 聊天界面 -->
+        <div class="chat-box" id="chatBox">
+            <div class="message-list" id="messageList"></div>
+            <div class="format-toolbar">
+                <button onclick="formatText('bold')"><b>B</b></button>
+                <button onclick="formatText('italic')"><i>I</i></button>
+                <button onclick="formatText('underline')"><u>U</u></button>
+                <button onclick="toggleEmojiPanel()">😀</button>
+            </div>
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="输入消息..." 
+                       onkeyup="if(event.key === 'Enter') sendMessage()">
+                <button class="primary" onclick="sendMessage()">发送消息</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            REPO: '8004',
+            USER: 'damian2021',
+            TOKEN: 'b5a96c2df3774e1a8ded0ff0cc54cdfa',
+            FILES: {
+                LOGIN: 'login.txt',
+                CHAT: 'room.txt'
+            },
+            API_BASE: 'https://gitee.com/api/v5/repos'
+        };
+
+        let currentUser = null;
+        let autoScroll = true;
+
+        // 显示通知
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // 滚动处理
+        function maintainScroll() {
+            const messageList = document.getElementById('messageList');
+            if (autoScroll) {
+                messageList.scrollTop = messageList.scrollHeight;
+            }
+        }
+
+        // 显示工具栏
+        function showToolbar() {
+            document.getElementById('toolbar').style.display = 'flex';
+        }
+
+        // 生成头像
+        function generateAvatar(name) {
+            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444'];
+            const initial = name.charAt(0).toUpperCase();
+            const colorIndex = name.charCodeAt(0) % colors.length;
+            return { initial, color: colors[colorIndex] };
+        }
+
+        // 自动创建文件
+        async function ensureFileExists(filename, initialContent = '') {
+            try {
+                const url = `${CONFIG.API_BASE}/${CONFIG.USER}/${CONFIG.REPO}/contents/${filename}?access_token=${CONFIG.TOKEN}`;
+                const response = await fetch(url);
+                
+                if (response.status === 404) {
+                    const createData = {
+                        content: btoa(unescape(encodeURIComponent(initialContent))),
+                        message: `初始化 ${filename}`,
+                    };
+                    await fetch(url, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(createData)
+                    });
+                }
+            } catch (error) {
+                console.error('文件初始化失败:', error);
+            }
+        }
+
+        // 登录处理
+        async function handleLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!username || !password) {
+                showNotification('请输入完整的登录信息', 'error');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                await ensureFileExists(CONFIG.FILES.LOGIN, 'admin:admin\nuser:123456');
+
+                const response = await fetch(
+                    `${CONFIG.API_BASE}/${CONFIG.USER}/${CONFIG.REPO}/contents/${CONFIG.FILES.LOGIN}?access_token=${CONFIG.TOKEN}`
+                );
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.message);
+
+                const fileContent = decodeURIComponent(escape(atob(data.content)));
+                const isValid = fileContent.split('\n').some(line => {
+                    const [u, p] = line.split(':');
+                    return u === username && p === password;
+                });
+
+                if (isValid) {
+                    currentUser = username;
+                    document.getElementById('loginBox').style.display = 'none';
+                    document.getElementById('chatBox').style.display = 'flex';
+                    showToolbar();
+                    loadChatHistory();
+                    setTimeout(() => {
+                        setInterval(loadChatHistory, 1000);
+                    }, 3000); // 延迟3秒刷新
+                    showNotification('登录成功');
+                } else {
+                    showNotification('用户名或密码错误', 'error');
+                }
+            } catch (error) {
+                showNotification('登录失败: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            showLoading();
+
+            try {
+                const response = await fetch(
+                    `${CONFIG.API_BASE}/${CONFIG.USER}/${CONFIG.REPO}/contents/${CONFIG.FILES.CHAT}?access_token=${CONFIG.TOKEN}`
+                );
+                const data = await response.json();
+
+                const history = data.content ? 
+                    decodeURIComponent(escape(atob(data.content))).split('\n') : [];
+                const newEntry = `${currentUser}||${new Date().toLocaleString()}||${message}`;
+
+                await fetch(
+                    `${CONFIG.API_BASE}/${CONFIG.USER}/${CONFIG.REPO}/contents/${CONFIG.FILES.CHAT}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${CONFIG.TOKEN}`
+                        },
+                        body: JSON.stringify({
+                            content: btoa(unescape(encodeURIComponent([...history, newEntry].join('\n')))),
+                            message: '新消息',
+                            sha: data.sha
+                        })
+                    }
+                );
+
+                input.value = '';
+                loadChatHistory();
+                showNotification('消息发送成功');
+            } catch (error) {
+                showNotification('发送失败: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // 加载聊天记录
+        async function loadChatHistory() {
+            try {
+                const response = await fetch(
+                    `${CONFIG.API_BASE}/${CONFIG.USER}/${CONFIG.REPO}/contents/${CONFIG.FILES.CHAT}?access_token=${CONFIG.TOKEN}`
+                );
+                const data = await response.json();
+
+                const messages = data.content ? 
+                    decodeURIComponent(escape(atob(data.content)))
+                        .split('\n')
+                        .map(line => line.split('||')) : [];
+
+                const messageList = document.getElementById('messageList');
+                messageList.innerHTML = messages
+                    .map(([user, time, content]) => `
+                        <div class="message-item">
+                            <div class="avatar" style="background: ${generateAvatar(user).color}">
+                                ${generateAvatar(user).initial}
+                            </div>
+                            <div class="message-content">
+                                <div class="message-header">
+                                    <span class="username">${user}</span>
+                                    <span class="timestamp">${time}</span>
+                                </div>
+                                <div>${content}</div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                maintainScroll();
+            } catch (error) {
+                console.error('加载失败:', error);
+            }
+        }
+
+        // 格式化文本
+        function formatText(type) {
+            const input = document.getElementById('messageInput');
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const selectedText = input.value.substring(start, end);
+
+            let formattedText = '';
+            switch (type) {
+                case 'bold':
+                    formattedText = `<b>${selectedText}</b>`;
+                    break;
+                case 'italic':
+                    formattedText = `<i>${selectedText}</i>`;
+                    break;
+                case 'underline':
+                    formattedText = `<u>${selectedText}</u>`;
+                    break;
+            }
+
+            input.value = input.value.substring(0, start) + formattedText + input.value.substring(end);
+            input.focus();
+            input.setSelectionRange(start + formattedText.length, start + formattedText.length);
+        }
+
+        // 插入表情包
+        function insertEmoji(emoji) {
+            const input = document.getElementById('messageInput');
+            input.value += emoji;
+            input.focus();
+        }
+
+        // 切换表情包面板
+        function toggleEmojiPanel() {
+            const emojiPanel = document.getElementById('emojiPanel');
+            emojiPanel.classList.toggle('open');
+        }
+
+        // 通用功能
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // 初始化涟漪效果
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function (e) {
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                const rect = button.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                ripple.style.width = ripple.style.height = `${size}px`;
+                ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+                ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+                button.appendChild(ripple);
+
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+
+        // 初始化滚动事件
+        document.getElementById('messageList').addEventListener('scroll', () => {
+            const list = document.getElementById('messageList');
+            autoScroll = list.scrollTop + list.clientHeight >= list.scrollHeight - 50;
+        });
+    </script>
+</body>
+</html>
