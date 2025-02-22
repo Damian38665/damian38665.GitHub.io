@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Damian的聊天室</title>
+    <title>积分系统聊天室内测版</title>
     <style>
         :root {
             --primary-color: #6366f1;
@@ -210,6 +210,53 @@
             color: #666;
         }
 
+        /* 格式化工具栏 */
+        .format-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .format-toolbar button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .format-toolbar button:hover {
+            background: #e0e0e0;
+        }
+
+        /* 表情包面板 */
+        .emoji-panel {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 12px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .emoji-panel.open {
+            display: block;
+        }
+
+        .emoji-panel .emoji {
+            font-size: 24px;
+            cursor: pointer;
+            margin: 4px;
+        }
+
+        .emoji-panel .emoji:hover {
+            transform: scale(1.2);
+        }
+
         /* 加载动画 */
         .loader {
             border: 4px solid #f3f3f3;
@@ -269,10 +316,24 @@
         <button onclick="window.location.href='roomlishi.html'">版本历史</button>
     </div>
 
+    <!-- 表情包面板 -->
+    <div class="emoji-panel" id="emojiPanel">
+        <div class="emoji" onclick="insertEmoji('😀')">😀</div>
+        <div class="emoji" onclick="insertEmoji('😂')">😂</div>
+        <div class="emoji" onclick="insertEmoji('😍')">😍</div>
+        <div class="emoji" onclick="insertEmoji('😎')">😎</div>
+        <div class="emoji" onclick="insertEmoji('👍')">👍</div>
+        <div class="emoji" onclick="insertEmoji('👏')">👏</div>
+        <div class="emoji" onclick="insertEmoji('🙏')">🙏</div>
+        <div class="emoji" onclick="insertEmoji('❤️')">❤️</div>
+        <div class="emoji" onclick="insertEmoji('🔥')">🔥</div>
+        <div class="emoji" onclick="insertEmoji('🎉')">🎉</div>
+    </div>
+
     <div class="container">
         <!-- 登录界面 -->
         <div class="login-box" id="loginBox">
-            <h1>欢迎进入聊天室</h1>
+            <h1>欢迎登录积分系统聊天室内测版</h1>
             <div class="input-group">
                 <input type="text" id="username" placeholder="用户名">
             </div>
@@ -287,6 +348,12 @@
         <!-- 聊天界面 -->
         <div class="chat-box" id="chatBox">
             <div class="message-list" id="messageList"></div>
+            <div class="format-toolbar">
+                <button onclick="formatText('bold')"><b>B</b></button>
+                <button onclick="formatText('italic')"><i>I</i></button>
+                <button onclick="formatText('underline')"><u>U</u></button>
+                <button onclick="toggleEmojiPanel()">😀</button>
+            </div>
             <div class="input-group">
                 <input type="text" id="messageInput" placeholder="输入消息..." 
                        onkeyup="if(event.key === 'Enter') sendMessage()">
@@ -491,6 +558,44 @@
             } catch (error) {
                 console.error('加载失败:', error);
             }
+        }
+
+        // 格式化文本
+        function formatText(type) {
+            const input = document.getElementById('messageInput');
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const selectedText = input.value.substring(start, end);
+
+            let formattedText = '';
+            switch (type) {
+                case 'bold':
+                    formattedText = `<b>${selectedText}</b>`;
+                    break;
+                case 'italic':
+                    formattedText = `<i>${selectedText}</i>`;
+                    break;
+                case 'underline':
+                    formattedText = `<u>${selectedText}</u>`;
+                    break;
+            }
+
+            input.value = input.value.substring(0, start) + formattedText + input.value.substring(end);
+            input.focus();
+            input.setSelectionRange(start + formattedText.length, start + formattedText.length);
+        }
+
+        // 插入表情包
+        function insertEmoji(emoji) {
+            const input = document.getElementById('messageInput');
+            input.value += emoji;
+            input.focus();
+        }
+
+        // 切换表情包面板
+        function toggleEmojiPanel() {
+            const emojiPanel = document.getElementById('emojiPanel');
+            emojiPanel.classList.toggle('open');
         }
 
         // 通用功能
