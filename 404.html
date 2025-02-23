@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - 页面未找到</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 5rem;
+            margin: 0;
+        }
+
+        p {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+
+        /* 修改按钮容器样式 */
+        .button-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            color: #fff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            position: relative; /* 新增定位 */
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        /* 修改涟漪效果样式 */
+        .ripple {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: translate(-50%, -50%) scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>404</h1>
+    <p>页面未找到，欢迎来到Damian2012的虚无世界</p>
+    
+    <!-- 新增按钮容器 -->
+    <div class="button-container">
+        <button class="button" onclick="window.history.back()">返回上一页</button>
+    </div>
+
+    <script>
+        // 只监听按钮的点击事件
+        document.querySelector('.button').addEventListener('click', function (e) {
+            // 创建涟漪元素
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            
+            // 计算相对于按钮的位置
+            const rect = this.getBoundingClientRect();
+            ripple.style.left = `${e.clientX - rect.left}px`;
+            ripple.style.top = `${e.clientY - rect.top}px`;
+            
+            this.appendChild(ripple);
+
+            // 自动移除涟漪元素
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    </script>
+</body>
+</html>
