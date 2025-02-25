@@ -480,7 +480,7 @@
 
         // 随机显示美国服务器被攻击的通知
         function showAttackNotification() {
-            showNotification('警告：美国服务器正在被攻击，请紧急处理！');
+            showNotification('系统：美国服务器正在被远程关机，如果非管理员操作，请紧急处理！');
             setTimeout(showAttackNotification, Math.floor(Math.random() * 10000) + 1000); // 5-15秒后再次显示
         }
 
